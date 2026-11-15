@@ -187,12 +187,6 @@
         </button>
       </div>
 
-      <!-- 우측 상단: 인벤토리 / 게임 / 친구 / ZIP연결 아이콘 메뉴 -->
-      <div class="pointer-events-auto flex flex-wrap justify-end items-center gap-1.5 sm:gap-2.5">
-        <!-- 인벤토리 버튼 -->
-        <button onclick="openInventoryModal()" class="btn-pixel btn-amber px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex flex-col items-center justify-center relative min-w-[58px] sm:min-w-[68px]">
-          <span class="text-lg sm:text-2xl leading-none">🎒</span>
-          <span class="text-[11px] sm:text-xs font-bold mt-1">인벤토리</span>
       <!-- 우측 상단: 인벤토리 / 게임 / 친구 아이콘 메뉴 -->
       <div class="pointer-events-auto flex flex-wrap justify-end items-center gap-1.5 sm:gap-2.5">
         <!-- 인벤토리 버튼 -->
@@ -409,7 +403,7 @@
   </div>
 
   <!-- =========================================================
-       [7] 미니게임 모달 (게임 1: 장작패기 / 게임 2: 고양이 쓰다듬기 / 게임 3: 우중철수)
+       [7] 미니게임 모달 (게임 1~6 통합)
        ========================================================= -->
   <div id="minigameModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-black/65">
     <div class="wood-panel w-full max-w-lg overflow-hidden animate-pop">
@@ -423,20 +417,28 @@
         </button>
       </div>
 
-      <!-- 게임 선택 탭 바 -->
-      <div class="bg-[#ead7b7] border-b-3 border-[#2b180c] px-3 pt-2 flex gap-1.5 overflow-x-auto">
-        <button id="mgTab1" onclick="selectMinigame(1)" class="px-3 py-1.5 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fffaf0] text-[#2b180c] font-bold text-xs sm:text-sm whitespace-nowrap">
-          🪓 1. 장작 패기
+      <!-- 게임 선택 탭 바 (6종) -->
+      <div class="bg-[#ead7b7] border-b-3 border-[#2b180c] px-2 pt-2 flex gap-1 overflow-x-auto cozy-scroll">
+        <button id="mgTab1" onclick="selectMinigame(1)" class="px-2.5 py-2 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fffaf0] text-[#2b180c] font-bold text-xs whitespace-nowrap">
+          🪓 1. 장작패기
         </button>
-        <button id="mgTab2" onclick="selectMinigame(2)" class="px-3 py-1.5 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs sm:text-sm whitespace-nowrap">
-          🐱 2. 고양이 쓰다듬기
+        <button id="mgTab2" onclick="selectMinigame(2)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🐱 2. 고양이
         </button>
-        <button id="mgTab3" onclick="selectMinigame(3)" class="px-3 py-1.5 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs sm:text-sm whitespace-nowrap">
+        <button id="mgTab3" onclick="selectMinigame(3)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
           ⛈️ 3. 우중철수
+        </button>
+        <button id="mgTab4" onclick="selectMinigame(4)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🍖 4. 고기찾기
+        </button>
+        <button id="mgTab5" onclick="selectMinigame(5)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🔥 5. 불닭복불복
+        </button>
+        <button id="mgTab6" onclick="selectMinigame(6)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🌰 6. 밤따기
         </button>
       </div>
 
-      <!-- 미니게임 인터랙티브 캔버스 & 상태 영역 -->
       <div id="minigameContainer" class="p-4 sm:p-5 text-center space-y-3 bg-[#fffaf0]">
         <div class="relative mx-auto w-full max-w-[420px] aspect-[4/3] bg-[#e8f3dc] border-3 border-[#2b180c] rounded-2xl overflow-hidden shadow-inner">
           <canvas id="minigameCanvas" width="420" height="315" class="w-full h-full block cursor-pointer touch-none"></canvas>
@@ -579,8 +581,7 @@
       activeGame: 1,
       rafId: null,
       lastTime: 0,
-      status: 'playing', // 'playing' | 'win' | 'fail'
-      // 게임 1 (장작 패기)
+      status: 'playing',
       axeX: 60,
       axeDir: 1,
       axeSpeed: 310,
@@ -588,18 +589,29 @@
       chopMisses: 0,
       chopStrikeAnim: 0,
       merongAnim: 0,
-      // 게임 2 (고양이 쓰다듬기)
       catScore: 0,
       catMoodTimer: 0,
       catScratchTimer: 0,
       catFloatingTexts: [],
       catTailAngle: 0,
-      // 게임 3 (우중철수)
-      rainTimeLeft: 10.0,
+      rainTimeLeft: 7.0,
       rainItems: [],
       draggingItem: null,
       rainDrops: [],
-      floodLevel: 0
+      floodLevel: 0,
+      meatTarget: null,
+      meatCaught: 0,
+      meatWrong: 0,
+      meatHoles: [],
+      meatSpawnTimer: 0,
+      meatHitEffects: [],
+      spicyPotIndex: 0,
+      pickedPotIndex: -1,
+      fireBreathTimer: 0,
+      chestnutTool: 'shoe',
+      chestnutCollected: 0,
+      chestnutList: [],
+      chestnutSpawnTimer: 0
     };
 
     function startCustomMinigame() {
@@ -610,21 +622,23 @@
       playClickSound();
       mgState.activeGame = gameNum;
 
-      // 탭 스타일 갱신
-      [1, 2, 3].forEach((n) => {
+      [1, 2, 3, 4, 5, 6].forEach((n) => {
         const tab = document.getElementById(`mgTab${n}`);
         if (!tab) return;
         if (n === gameNum) {
-          tab.className = 'px-3 py-1.5 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fffaf0] text-[#2b180c] font-bold text-xs sm:text-sm whitespace-nowrap';
+          tab.className = 'px-2.5 py-2 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fffaf0] text-[#2b180c] font-bold text-xs whitespace-nowrap';
         } else {
-          tab.className = 'px-3 py-1.5 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs sm:text-sm whitespace-nowrap';
+          tab.className = 'px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap';
         }
       });
 
       const titles = {
         1: '🪓 게임 1 — 장작 패기 타이밍',
         2: '🐱 게임 2 — 고양이 쓰다듬기',
-        3: '⛈️ 게임 3 — 10초 우중철수'
+        3: '⛈️ 게임 3 — 7초 우중철수',
+        4: '🍖 게임 4 — 고기찾기 (두더지)',
+        5: '🔥 게임 5 — 불닭떡볶이 복불복',
+        6: '🌰 게임 6 — 밤따기 (신발 & 손)'
       };
       document.getElementById('minigameModalTitle').textContent = titles[gameNum];
       restartCurrentMinigame();
@@ -660,23 +674,25 @@
         mgState.catTailAngle = 0;
         statusText.innerHTML = '머리(+1) · 등(+2) · 엉덩이(+3)를 쓰다듬어 <strong>10점</strong> 달성! <span class="text-[#c0392b]">(꼬리 금지!)</span>';
       } else if (mgState.activeGame === 3) {
-        mgState.rainTimeLeft = 10.0;
+        mgState.rainTimeLeft = 7.0;
         mgState.draggingItem = null;
         mgState.floodLevel = 0;
-        mgState.rainDrops = Array.from({ length: 65 }, () => ({
+        mgState.rainDrops = Array.from({ length: 75 }, () => ({
           x: Math.random() * 420,
           y: Math.random() * 315,
           len: 10 + Math.random() * 12,
-          spd: 360 + Math.random() * 180
+          spd: 380 + Math.random() * 180
         }));
-        // 타프 주변 6개 캠핑 소품 배치
         const presets = [
-          { emoji: '🎒', name: '배낭', x: 58, y: 65 },
-          { emoji: '🏮', name: '랜턴', x: 358, y: 62 },
-          { emoji: '🪑', name: '의자', x: 54, y: 248 },
-          { emoji: '🍳', name: '코펠', x: 362, y: 252 },
-          { emoji: '🎸', name: '기타', x: 210, y: 45 },
-          { emoji: '📻', name: '라디오', x: 210, y: 274 }
+          { emoji: '🎒', name: '배낭', x: 54, y: 58 },
+          { emoji: '🏮', name: '랜턴', x: 364, y: 58 },
+          { emoji: '🪑', name: '의자', x: 52, y: 254 },
+          { emoji: '🍳', name: '코펠', x: 366, y: 254 },
+          { emoji: '🎸', name: '기타', x: 210, y: 44 },
+          { emoji: '📻', name: '라디오', x: 210, y: 274 },
+          { emoji: '🥾', name: '등산화', x: 48, y: 156 },
+          { emoji: '📷', name: '카메라', x: 372, y: 156 },
+          { emoji: '🧸', name: '인형', x: 112, y: 266 }
         ];
         mgState.rainItems = presets.map((p, idx) => ({
           id: idx,
@@ -686,10 +702,74 @@
           y: p.y,
           saved: false
         }));
-        statusText.innerHTML = '쏟아지는 비! <strong>10초 안에</strong> 주변 아이템을 드래그해 중앙 타프 안으로 옮기세요!';
+        statusText.innerHTML = '폭우 경보! <strong>7초 안에</strong> 주변 아이템 <strong>9개</strong>를 모두 중앙 타프로 대피시키세요!';
+      } else if (mgState.activeGame === 4) {
+        const animals = [
+          { emoji: '🐷', name: '돼지' },
+          { emoji: '🐮', name: '소' },
+          { emoji: '🐑', name: '양' },
+          { emoji: '🐔', name: '닭' }
+        ];
+        mgState.meatTarget = animals[Math.floor(Math.random() * animals.length)];
+        mgState.meatCaught = 0;
+        mgState.meatWrong = 0;
+        mgState.meatSpawnTimer = 0.12;
+        mgState.meatHitEffects = [];
+        const holeCoords = [
+          { x: 95, y: 138 }, { x: 210, y: 138 }, { x: 325, y: 138 },
+          { x: 95, y: 245 }, { x: 210, y: 245 }, { x: 325, y: 245 }
+        ];
+        mgState.meatHoles = holeCoords.map((hc, idx) => ({
+          id: idx,
+          x: hc.x,
+          y: hc.y,
+          animal: null,
+          timer: 0,
+          popProgress: 0,
+          hit: false
+        }));
+        statusText.innerHTML = `🎯 목표: <strong>${mgState.meatTarget.emoji} ${mgState.meatTarget.name}</strong>만 <strong>10마리</strong> 잡으세요!`;
+      } else if (mgState.activeGame === 5) {
+        mgState.spicyPotIndex = Math.random() < 0.5 ? 0 : 1;
+        mgState.pickedPotIndex = -1;
+        mgState.fireBreathTimer = 0;
+        statusText.innerHTML = '냄비 2개 중 <strong>순한맛 떡볶이</strong>를 고르세요! <span class="text-[#c0392b]">(핵불맛 주의!)</span>';
+      } else if (mgState.activeGame === 6) {
+        mgState.chestnutTool = 'shoe';
+        mgState.chestnutCollected = 0;
+        mgState.chestnutList = [];
+        mgState.chestnutSpawnTimer = 0.1;
+        statusText.innerHTML = '<strong>👟 신발</strong>로 밤 가시를 먼저 밟아 없앤 뒤, <strong>✋ 손</strong>으로 밤 <strong>5개</strong>를 주우세요!';
+
+        actionArea.innerHTML = `
+          <div class="flex gap-2 w-full">
+            <button id="toolBtnShoe" onclick="setChestnutTool('shoe')" class="btn-pixel btn-amber flex-1 py-2 text-xs sm:text-sm font-bold border-4 border-[#2b180c]">
+              👟 신발 (가시 제거)
+            </button>
+            <button id="toolBtnHand" onclick="setChestnutTool('hand')" class="btn-pixel btn-wood flex-1 py-2 text-xs sm:text-sm font-bold opacity-75">
+              ✋ 손 (밤 줍기)
+            </button>
+          </div>
+        `;
       }
 
       mgState.rafId = requestAnimationFrame(updateAndRenderMinigame);
+    }
+
+    function setChestnutTool(tool) {
+      playClickSound();
+      mgState.chestnutTool = tool;
+      const btnShoe = document.getElementById('toolBtnShoe');
+      const btnHand = document.getElementById('toolBtnHand');
+      if (!btnShoe || !btnHand) return;
+
+      if (tool === 'shoe') {
+        btnShoe.className = 'btn-pixel btn-amber flex-1 py-2 text-xs sm:text-sm font-bold border-4 border-[#2b180c]';
+        btnHand.className = 'btn-pixel btn-wood flex-1 py-2 text-xs sm:text-sm font-bold opacity-75';
+      } else {
+        btnShoe.className = 'btn-pixel btn-wood flex-1 py-2 text-xs sm:text-sm font-bold opacity-75';
+        btnHand.className = 'btn-pixel btn-amber flex-1 py-2 text-xs sm:text-sm font-bold border-4 border-[#2b180c]';
+      }
     }
 
     function onMinigameWin(customMsg) {
@@ -728,7 +808,6 @@
       `;
     }
 
-    // 미니게임 캔버스 포인터 이벤트 연결
     (function setupMinigameCanvasEvents() {
       const mgCanvas = document.getElementById('minigameCanvas');
       if (!mgCanvas) return;
@@ -743,17 +822,40 @@
         };
       }
 
+      const handleMove = (e) => {
+        if (mgState.activeGame !== 3 || !mgState.draggingItem) return;
+        const pos = toCanvasCoords(e);
+        mgState.draggingItem.x = Math.max(40, Math.min(380, pos.x));
+        mgState.draggingItem.y = Math.max(40, Math.min(280, pos.y));
+      };
+
+      const handleUp = () => {
+        if (mgState.activeGame === 3 && mgState.draggingItem) {
+          const it = mgState.draggingItem;
+          if (it.x >= 135 && it.x <= 285 && it.y >= 105 && it.y <= 215) {
+            it.saved = true;
+            playPyororongSound();
+            showToast(`⛺ [${it.name}] 타프 안으로 안전 대피 완료!`);
+
+            const allSaved = mgState.rainItems.every((item) => item.saved);
+            if (allSaved) {
+              onMinigameWin('폭우 속 9개 아이템 우중철수 성공!');
+            }
+          }
+          mgState.draggingItem = null;
+        }
+      };
+
       const handleDown = (e) => {
         if (mgState.status !== 'playing') return;
         const pos = toCanvasCoords(e);
 
         if (mgState.activeGame === 1) {
-          // 게임 1: 화면 터치 시 중앙(x: 210 ± 34) 판정
           mgState.chopStrikeAnim = 0.22;
           const dist = Math.abs(mgState.axeX - 210);
           if (dist <= 34) {
             mgState.chopHits += 1;
-            mgState.axeSpeed += 38; // 성공할수록 도끼가 조금씩 빨라짐
+            mgState.axeSpeed += 38;
             playChopSound();
             if (mgState.chopHits >= 5) {
               onMinigameWin('장작 5번 패기 완벽 성공!');
@@ -773,7 +875,6 @@
             }
           }
         } else if (mgState.activeGame === 2) {
-          // 게임 2: 고양이 부위 판정 (꼬리 먼저 체크 -> 머리 -> 엉덩이 -> 등)
           const tailDist = Math.hypot(pos.x - 292, pos.y - 178);
           const headDist = Math.hypot(pos.x - 148, pos.y - 145);
           const buttDist = Math.hypot(pos.x - 252, pos.y - 182);
@@ -817,7 +918,6 @@
             }
           }
         } else if (mgState.activeGame === 3) {
-          // 게임 3: 아이템 잡기
           for (let i = mgState.rainItems.length - 1; i >= 0; i--) {
             const it = mgState.rainItems[i];
             if (!it.saved && Math.hypot(pos.x - it.x, pos.y - it.y) <= 28) {
@@ -826,32 +926,86 @@
               break;
             }
           }
-        }
-      };
+        } else if (mgState.activeGame === 4) {
+          for (const hole of mgState.meatHoles) {
+            if (hole.animal && !hole.hit && hole.popProgress > 0.22) {
+              const animY = hole.y - 26 * hole.popProgress;
+              if (Math.hypot(pos.x - hole.x, pos.y - animY) <= 36) {
+                hole.hit = true;
+                hole.timer = 0.22;
+                if (hole.animal.name === mgState.meatTarget.name) {
+                  mgState.meatCaught += 1;
+                  playPyororongSound();
+                  mgState.meatHitEffects.push({ x: hole.x, y: animY - 18, text: `나이스! +1`, color: '#2ecc71', life: 0.85 });
+                  if (mgState.meatCaught >= 10) {
+                    onMinigameWin(`${mgState.meatTarget.emoji} ${mgState.meatTarget.name} 10마리 사냥 성공!`);
+                  } else {
+                    document.getElementById('minigameStatusText').innerHTML =
+                      `🎯 <strong>${mgState.meatTarget.emoji} ${mgState.meatTarget.name}</strong> 잡기: <strong>${mgState.meatCaught} / 10마리</strong> (실수 ${mgState.meatWrong}/3)`;
+                  }
+                } else {
+                  mgState.meatWrong += 1;
+                  playChopSound();
+                  mgState.meatHitEffects.push({ x: hole.x, y: animY - 18, text: `앗! ${hole.animal.name} ❌`, color: '#ff4757', life: 0.95 });
+                  if (mgState.meatWrong >= 3) {
+                    onMinigameFail(`<span class="text-[#e55039] text-base">💥 앗! 다른 동물을 3번 때려서 실패했어요!</span>`);
+                  } else {
+                    document.getElementById('minigameStatusText').innerHTML =
+                      `⚠️ 목표는 <strong>${mgState.meatTarget.emoji} ${mgState.meatTarget.name}</strong>예요! (실수 <strong>${mgState.meatWrong} / 3</strong>)`;
+                  }
+                }
+                break;
+              }
+            }
+          }
+        } else if (mgState.activeGame === 5) {
+          const pot1Dist = Math.hypot(pos.x - 125, pos.y - 185);
+          const pot2Dist = Math.hypot(pos.x - 295, pos.y - 185);
+          let chosen = -1;
+          if (pot1Dist <= 56) chosen = 0;
+          else if (pot2Dist <= 56) chosen = 1;
 
-      const handleMove = (e) => {
-        if (mgState.activeGame === 3 && mgState.status === 'playing' && mgState.draggingItem) {
-          e.preventDefault();
-          const pos = toCanvasCoords(e);
-          mgState.draggingItem.x = Math.max(24, Math.min(396, pos.x));
-          mgState.draggingItem.y = Math.max(24, Math.min(291, pos.y));
-        }
-      };
-
-      const handleUp = () => {
-        if (mgState.activeGame === 3 && mgState.draggingItem) {
-          const it = mgState.draggingItem;
-          mgState.draggingItem = null;
-          // 중앙 타프 영역 (x: 135~285, y: 105~215) 안에 넣었는지 판정
-          if (it.x >= 135 && it.x <= 285 && it.y >= 105 && it.y <= 215) {
-            it.saved = true;
-            playPyororongSound();
-            const remaining = mgState.rainItems.filter((item) => !item.saved).length;
-            if (remaining === 0) {
-              onMinigameWin('폭우 속 우중철수 대성공!');
+          if (chosen !== -1) {
+            mgState.pickedPotIndex = chosen;
+            if (chosen === mgState.spicyPotIndex) {
+              mgState.fireBreathTimer = 1.0;
+              onMinigameFail('<span class="text-[#ff3838] text-base">🔥 크아악!! 핵불맛 떡볶이다!! 입에서 불이 뿜어져 나와요!!</span>');
             } else {
-              document.getElementById('minigameStatusText').innerHTML =
-                `⛺ <strong>${it.name}</strong> 대피 완료! 남은 아이템: <strong>${remaining}개</strong>`;
+              onMinigameWin('🍯 달콤매콤 순한맛 떡볶이 당첨!');
+            }
+          }
+        } else if (mgState.activeGame === 6) {
+          for (let i = mgState.chestnutList.length - 1; i >= 0; i--) {
+            const ch = mgState.chestnutList[i];
+            if (Math.hypot(pos.x - ch.x, pos.y - ch.y) <= 34) {
+              if (mgState.chestnutTool === 'shoe') {
+                if (ch.spikes > 0) {
+                  ch.spikes -= 1;
+                  playChopSound();
+                  if (ch.spikes === 0) {
+                    showToast('👟 짝! 가시가 모두 제거되었어요! 이제 손으로 주우세요.');
+                  } else {
+                    showToast('👟 튼튼한 밤송이! 한 번 더 밟아야 가시가 벗겨져요!');
+                  }
+                } else {
+                  showToast('✨ 이미 가시가 없어요! 아래 [✋ 손]을 선택해 주우세요.');
+                }
+              } else {
+                if (ch.spikes > 0) {
+                  onMinigameFail('<span class="text-[#e55039] text-base">💥 앗따거!! 가시 있는 밤을 손으로 만져서 손이 퉁퉁 부었어요!!</span>');
+                } else {
+                  mgState.chestnutList.splice(i, 1);
+                  mgState.chestnutCollected += 1;
+                  playPyororongSound();
+                  if (mgState.chestnutCollected >= 5) {
+                    onMinigameWin('🌰 알밤 5개 채집 완벽 성공!');
+                  } else {
+                    document.getElementById('minigameStatusText').innerHTML =
+                      `🌰 알밤 채집: <strong>${mgState.chestnutCollected} / 5개</strong> (신발로 가시 제거 후 손으로 줍기!)`;
+                  }
+                }
+              }
+              break;
             }
           }
         }
@@ -887,20 +1041,23 @@
         renderMinigame2CatPet(gCtx, dt);
       } else if (mgState.activeGame === 3) {
         renderMinigame3RainEvac(gCtx, dt);
+      } else if (mgState.activeGame === 4) {
+        renderMinigame4MeatWhack(gCtx, dt);
+      } else if (mgState.activeGame === 5) {
+        renderMinigame5SpicyTteok(gCtx, dt);
+      } else if (mgState.activeGame === 6) {
+        renderMinigame6Chestnut(gCtx, dt);
       }
 
       mgState.rafId = requestAnimationFrame(updateAndRenderMinigame);
     }
 
-    // [게임 1 렌더러] 장작 패기 타이밍 맞추기
     function renderMinigame1WoodChop(ctx, dt) {
-      // 숲속 배경
       ctx.fillStyle = '#78b159';
       ctx.fillRect(0, 0, 420, 315);
       ctx.fillStyle = '#5c913b';
       ctx.fillRect(0, 215, 420, 100);
 
-      // 상단 진행도 표시 (성공 5칸 / 실패 5칸)
       ctx.font = 'bold 14px "Jua", sans-serif';
       ctx.fillStyle = '#2b180c';
       ctx.textAlign = 'left';
@@ -908,7 +1065,6 @@
       ctx.textAlign = 'right';
       ctx.fillText(`실패: ${'❌'.repeat(mgState.chopMisses)}${'▫️'.repeat(5 - mgState.chopMisses)}`, 404, 28);
 
-      // 중앙 타이밍 게이지 바
       ctx.fillStyle = '#ead7b7';
       ctx.beginPath();
       ctx.roundRect(45, 52, 330, 18, 9);
@@ -917,11 +1073,9 @@
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // 중앙 퍼펙트 존 (x: 210 ± 34)
       ctx.fillStyle = '#f6b93b';
       ctx.fillRect(210 - 34, 54, 68, 14);
 
-      // 중앙 나무 밑동
       ctx.fillStyle = '#8c5319';
       ctx.beginPath();
       ctx.roundRect(172, 200, 76, 56, 8);
@@ -935,14 +1089,12 @@
       ctx.fill();
       ctx.stroke();
 
-      // 밑동 위 장작
       ctx.fillStyle = '#b87d4b';
       ctx.beginPath();
       ctx.roundRect(194, 152, 32, 46, 6);
       ctx.fill();
       ctx.stroke();
 
-      // 좌우 왕복 도끼 업데이트
       if (mgState.status === 'playing') {
         mgState.axeX += mgState.axeDir * mgState.axeSpeed * dt;
         if (mgState.axeX >= 365) {
@@ -955,7 +1107,6 @@
       }
       if (mgState.chopStrikeAnim > 0) mgState.chopStrikeAnim -= dt;
 
-      // 도끼 그리기
       const axeY = mgState.chopStrikeAnim > 0 ? 148 : 96;
       ctx.save();
       ctx.translate(mgState.axeX, axeY);
@@ -966,7 +1117,6 @@
       ctx.fillText('🪓', 0, 0);
       ctx.restore();
 
-      // 5번 Miss 시 '메롱' 이모티콘 바운스 & 흔들림 애니메이션
       if (mgState.status === 'fail') {
         mgState.merongAnim += dt * 7;
         const bounceY = Math.sin(mgState.merongAnim) * 14;
@@ -993,9 +1143,7 @@
       }
     }
 
-    // [게임 2 렌더러] 고양이 쓰다듬기
     function renderMinigame2CatPet(ctx, dt) {
-      // 따뜻한 돗자리 배경
       ctx.fillStyle = '#fdf5e6';
       ctx.fillRect(0, 0, 420, 315);
       ctx.fillStyle = '#f3d59b';
@@ -1006,7 +1154,6 @@
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // 상단 점수 게이지
       ctx.font = 'bold 16px "Jua", sans-serif';
       ctx.fillStyle = '#2b180c';
       ctx.textAlign = 'center';
@@ -1015,7 +1162,6 @@
       if (mgState.catMoodTimer > 0) mgState.catMoodTimer -= dt;
       mgState.catTailAngle += dt * 4.5;
 
-      // 고양이 꼬리 (오른쪽 - 건드리면 할퀴기!)
       ctx.save();
       ctx.translate(268, 185);
       ctx.rotate(Math.sin(mgState.catTailAngle) * 0.35);
@@ -1028,7 +1174,6 @@
       ctx.stroke();
       ctx.restore();
 
-      // 고양이 몸통(등 & 엉덩이)
       ctx.fillStyle = '#f39c12';
       ctx.beginPath();
       ctx.ellipse(208, 178, 62, 42, 0, 0, Math.PI * 2);
@@ -1037,20 +1182,17 @@
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // 줄무늬 포인트
       ctx.fillStyle = '#d35400';
       ctx.fillRect(190, 142, 8, 16);
       ctx.fillRect(206, 140, 8, 18);
       ctx.fillRect(222, 143, 8, 15);
 
-      // 고양이 머리 (왼쪽)
       ctx.fillStyle = '#f39c12';
       ctx.beginPath();
       ctx.arc(148, 145, 36, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // 고양이 귀
       ctx.beginPath();
       ctx.moveTo(122, 122);
       ctx.lineTo(126, 94);
@@ -1067,33 +1209,28 @@
       ctx.fill();
       ctx.stroke();
 
-      // 고양이 표정 (터치 시 기분 좋게 눈웃음!)
       ctx.fillStyle = '#2b180c';
       ctx.strokeStyle = '#2b180c';
       ctx.lineWidth = 2.5;
       if (mgState.catMoodTimer > 0 || mgState.status === 'win') {
-        // 기분 좋은 ^ ^ 웃음 눈
         ctx.beginPath();
         ctx.arc(136, 143, 6, Math.PI, 0);
         ctx.stroke();
         ctx.beginPath();
         ctx.arc(160, 143, 6, Math.PI, 0);
         ctx.stroke();
-        // 발그레 볼터치
         ctx.fillStyle = '#ff7675';
         ctx.beginPath();
         ctx.arc(128, 152, 5, 0, Math.PI * 2);
         ctx.arc(168, 152, 5, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // 기본 동그란 눈
         ctx.beginPath();
         ctx.arc(136, 142, 4, 0, Math.PI * 2);
         ctx.arc(160, 142, 4, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // 코 & 입
       ctx.fillStyle = '#ff7675';
       ctx.beginPath();
       ctx.arc(148, 150, 3.5, 0, Math.PI * 2);
@@ -1103,7 +1240,6 @@
       ctx.arc(152, 154, 4, 0, Math.PI);
       ctx.stroke();
 
-      // 부위별 점수 가이드 라벨
       ctx.font = 'bold 12px "Jua", sans-serif';
       ctx.fillStyle = '#5c3a21';
       ctx.fillText('머리(+1)', 148, 198);
@@ -1112,7 +1248,6 @@
       ctx.fillStyle = '#c0392b';
       ctx.fillText('꼬리(위험!)', 305, 152);
 
-      // 떠오르는 점수 텍스트
       for (let i = mgState.catFloatingTexts.length - 1; i >= 0; i--) {
         const ft = mgState.catFloatingTexts[i];
         ft.y -= 28 * dt;
@@ -1129,7 +1264,6 @@
         ctx.restore();
       }
 
-      // 꼬리 터치 실패 시 화면 할퀴기 발톱 자국 연출
       if (mgState.status === 'fail') {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
         ctx.fillRect(0, 0, 420, 315);
@@ -1152,9 +1286,7 @@
       }
     }
 
-    // [게임 3 렌더러] 10초 우중철수 & 실패 시 대홍수
     function renderMinigame3RainEvac(ctx, dt) {
-      // 비구름 어두운 잔디 배경
       ctx.fillStyle = '#3b593f';
       ctx.fillRect(0, 0, 420, 315);
 
@@ -1166,7 +1298,6 @@
         }
       }
 
-      // 중앙 안전 구역: 대형 타프 (x: 135~285, y: 105~215)
       ctx.fillStyle = '#f5deb3';
       ctx.beginPath();
       ctx.roundRect(135, 105, 150, 110, 16);
@@ -1180,7 +1311,6 @@
       ctx.textAlign = 'center';
       ctx.fillText('⛺ 안전 타프 구역', 210, 126);
 
-      // 아이템 렌더링
       mgState.rainItems.forEach((it) => {
         ctx.save();
         ctx.font = '32px sans-serif';
@@ -1195,7 +1325,6 @@
         ctx.restore();
       });
 
-      // 쏟아지는 빗줄기 애니메이션
       ctx.strokeStyle = 'rgba(174, 214, 241, 0.72)';
       ctx.lineWidth = 2;
       mgState.rainDrops.forEach((r) => {
@@ -1211,7 +1340,6 @@
         ctx.stroke();
       });
 
-      // 상단 남은 시간 타이머
       ctx.fillStyle = 'rgba(43, 24, 12, 0.8)';
       ctx.beginPath();
       ctx.roundRect(125, 10, 170, 28, 12);
@@ -1220,7 +1348,6 @@
       ctx.fillStyle = mgState.rainTimeLeft <= 3 ? '#ff6b6b' : '#ffeaa7';
       ctx.fillText(`⏱️ 남은 시간: ${mgState.rainTimeLeft.toFixed(1)}초`, 210, 29);
 
-      // 실패 시 대홍수 화면 연출
       if (mgState.status === 'fail') {
         mgState.floodLevel = Math.min(315, mgState.floodLevel + 260 * dt);
         const waterTop = 315 - mgState.floodLevel;
@@ -1228,7 +1355,6 @@
         ctx.fillStyle = 'rgba(10, 132, 255, 0.78)';
         ctx.fillRect(0, waterTop, 420, mgState.floodLevel);
 
-        // 출렁이는 파도 물결
         ctx.fillStyle = '#48dbfb';
         const waveTime = performance.now();
         for (let wx = 0; wx < 420; wx += 30) {
@@ -1247,18 +1373,374 @@
       }
     }
 
-    /**
-     * =========================================================================
-     * [GitHub 배포용 에셋 매니페스트 설정]
-     * -------------------------------------------------------------------------
-     * - GitHub 레포지토리에 `camping_asset/` 폴더를 함께 업로드하시면,
-     *   방문하는 모든 사용자에게 수동 조작 없이 `./camping_asset/폴더명/파일명.png`가
-     *   자동으로 로딩됩니다!
-     * - 아래 `CAMPING_ASSET_MANIFEST`에 실제 `camping_asset/` 안의 폴더명과
-     *   PNG 파일명을 적어두시면 그대로 인벤토리 탭과 아이템으로 자동 구성됩니다.
-     *   (또는 GitHub API / camping_asset/manifest.json 이 존재하면 자동 우선 스캔!)
-     * =========================================================================
-     */
+    function renderMinigame4MeatWhack(ctx, dt) {
+      ctx.fillStyle = '#7bed9f';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#2ed573';
+      ctx.fillRect(0, 62, 420, 253);
+
+      ctx.fillStyle = '#2b180c';
+      ctx.beginPath();
+      ctx.roundRect(14, 10, 392, 42, 12);
+      ctx.fill();
+
+      ctx.font = 'bold 15px "Jua", sans-serif';
+      ctx.fillStyle = '#ffeaa7';
+      ctx.textAlign = 'left';
+      const target = mgState.meatTarget || { emoji: '🐷', name: '돼지' };
+      ctx.fillText(`지시: ${target.emoji} ${target.name} (${mgState.meatCaught}/10)`, 26, 36);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ff7675';
+      ctx.fillText(`오답: ${'❌'.repeat(mgState.meatWrong)}${'▫️'.repeat(3 - mgState.meatWrong)}`, 394, 36);
+
+      if (mgState.status === 'playing') {
+        mgState.meatSpawnTimer -= dt;
+        if (mgState.meatSpawnTimer <= 0) {
+          mgState.meatSpawnTimer = 0.16 + Math.random() * 0.18;
+          const emptyHoles = mgState.meatHoles.filter((h) => !h.animal);
+          if (emptyHoles.length > 0) {
+            const pickHole = emptyHoles[Math.floor(Math.random() * emptyHoles.length)];
+            const pool = [
+              { emoji: '🐷', name: '돼지' },
+              { emoji: '🐮', name: '소' },
+              { emoji: '🐑', name: '양' },
+              { emoji: '🐔', name: '닭' }
+            ];
+            const chosenAnimal = Math.random() < 0.42
+              ? target
+              : pool[Math.floor(Math.random() * pool.length)];
+            pickHole.animal = chosenAnimal;
+            pickHole.timer = 0.62 + Math.random() * 0.24;
+            pickHole.popProgress = 0;
+            pickHole.hit = false;
+          }
+        }
+      }
+
+      mgState.meatHoles.forEach((h) => {
+        ctx.fillStyle = '#4a2e1b';
+        ctx.beginPath();
+        ctx.ellipse(h.x, h.y, 40, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        if (h.animal) {
+          if (mgState.status === 'playing') {
+            h.timer -= dt;
+            if (h.timer > 0.14) {
+              h.popProgress = Math.min(1, h.popProgress + dt * 10.5);
+            } else {
+              h.popProgress = Math.max(0, h.popProgress - dt * 10.5);
+            }
+            if (h.timer <= 0) {
+              h.animal = null;
+              h.popProgress = 0;
+            }
+          }
+
+          if (h.animal && h.popProgress > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(h.x - 42, h.y - 75, 84, 78);
+            ctx.clip();
+
+            const drawY = h.y + 14 - 40 * h.popProgress;
+            ctx.font = '44px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(h.animal.emoji, h.x, drawY);
+            ctx.restore();
+          }
+        }
+
+        ctx.fillStyle = '#8c5830';
+        ctx.beginPath();
+        ctx.ellipse(h.x, h.y + 8, 42, 9, 0, 0, Math.PI);
+        ctx.fill();
+      });
+
+      for (let i = mgState.meatHitEffects.length - 1; i >= 0; i--) {
+        const ef = mgState.meatHitEffects[i];
+        ef.y -= 26 * dt;
+        ef.life -= 1.2 * dt;
+        if (ef.life <= 0) {
+          mgState.meatHitEffects.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = ef.life;
+        ctx.font = 'bold 16px "Jua", sans-serif';
+        ctx.fillStyle = ef.color;
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 3;
+        ctx.strokeText(ef.text, ef.x, ef.y);
+        ctx.fillText(ef.text, ef.x, ef.y);
+        ctx.restore();
+      }
+    }
+
+    function renderMinigame5SpicyTteok(ctx, dt) {
+      ctx.fillStyle = '#fff3d1';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#d35400';
+      ctx.fillRect(0, 235, 420, 80);
+
+      ctx.font = 'bold 18px "Jua", sans-serif';
+      ctx.fillStyle = '#2b180c';
+      ctx.textAlign = 'center';
+      ctx.fillText('🍲 어떤 냄비의 떡볶이를 먹을까요?', 210, 38);
+      ctx.font = '13px "Jua", sans-serif';
+      ctx.fillStyle = '#74492b';
+      ctx.fillText('하나만 순한맛! 핵불맛을 고르면 불을 뿜어요!', 210, 60);
+
+      const pots = [
+        { x: 125, y: 185, label: '1번 냄비' },
+        { x: 295, y: 185, label: '2번 냄비' }
+      ];
+
+      pots.forEach((pot, idx) => {
+        const isSpicy = mgState.spicyPotIndex === idx;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.beginPath();
+        ctx.ellipse(pot.x, pot.y + 42, 48, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath();
+        ctx.roundRect(pot.x - 44, pot.y - 12, 88, 52, 12);
+        ctx.fill();
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#e67e22';
+        ctx.fillRect(pot.x - 54, pot.y - 2, 10, 14);
+        ctx.strokeRect(pot.x - 54, pot.y - 2, 10, 14);
+        ctx.fillRect(pot.x + 44, pot.y - 2, 10, 14);
+        ctx.strokeRect(pot.x + 44, pot.y - 2, 10, 14);
+
+        ctx.fillStyle = (mgState.status !== 'playing' && isSpicy) ? '#b33939' : '#e55039';
+        ctx.beginPath();
+        ctx.ellipse(pot.x, pot.y - 10, 42, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff8eb';
+        ctx.fillRect(pot.x - 20, pot.y - 14, 16, 6);
+        ctx.fillRect(pot.x + 4, pot.y - 12, 16, 6);
+        ctx.fillStyle = '#2ecc71';
+        ctx.beginPath();
+        ctx.arc(pot.x - 2, pot.y - 11, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        const steamOffset = Math.sin(performance.now() * 0.005 + idx) * 5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(pot.x - 12, pot.y - 30);
+        ctx.quadraticCurveTo(pot.x - 18 + steamOffset, pot.y - 45, pot.x - 10, pot.y - 58);
+        ctx.moveTo(pot.x + 12, pot.y - 30);
+        ctx.quadraticCurveTo(pot.x + 18 - steamOffset, pot.y - 45, pot.x + 10, pot.y - 58);
+        ctx.stroke();
+
+        ctx.font = 'bold 15px "Jua", sans-serif';
+        ctx.fillStyle = '#2b180c';
+        ctx.fillText(pot.label, pot.x, pot.y + 62);
+
+        if (mgState.status !== 'playing') {
+          ctx.font = 'bold 14px "Jua", sans-serif';
+          ctx.fillStyle = isSpicy ? '#c0392b' : '#218c74';
+          ctx.fillText(isSpicy ? '💀 핵불맛!' : '🍯 순한맛!', pot.x, pot.y - 38);
+        }
+      });
+
+      if (mgState.status === 'fail') {
+        const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.12;
+        ctx.fillStyle = 'rgba(43, 10, 10, 0.55)';
+        ctx.fillRect(0, 0, 420, 315);
+
+        ctx.save();
+        ctx.translate(155, 165);
+        ctx.scale(pulse, pulse);
+
+        const grad = ctx.createLinearGradient(0, 0, 220, 0);
+        grad.addColorStop(0, '#fff200');
+        grad.addColorStop(0.45, '#ff9f1a');
+        grad.addColorStop(1, '#ff3838');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, -8);
+        ctx.lineTo(210, -68);
+        ctx.lineTo(195, 0);
+        ctx.lineTo(215, 68);
+        ctx.lineTo(0, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        ctx.font = '76px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🥵', 115, 165);
+
+        ctx.font = '38px sans-serif';
+        ctx.fillText('🔥', 225, 145);
+        ctx.fillText('🔥', 275, 175);
+        ctx.fillText('🔥', 325, 150);
+
+        ctx.font = 'bold 28px "Jua", sans-serif';
+        ctx.fillStyle = '#fffa65';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 5;
+        ctx.strokeText('화아아악!! 핵불닭 당첨!!', 210, 265);
+        ctx.fillText('화아아악!! 핵불닭 당첨!!', 210, 265);
+      }
+    }
+
+    function renderMinigame6Chestnut(ctx, dt) {
+      ctx.fillStyle = '#8c5830';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#a66e44';
+      ctx.fillRect(0, 48, 420, 267);
+
+      ctx.fillStyle = '#2b180c';
+      ctx.fillRect(0, 0, 420, 46);
+      ctx.font = 'bold 15px "Jua", sans-serif';
+      ctx.fillStyle = '#ffeaa7';
+      ctx.textAlign = 'left';
+      ctx.fillText(`🌰 알밤: ${mgState.chestnutCollected} / 5개`, 16, 29);
+
+      ctx.textAlign = 'right';
+      const toolLabel = mgState.chestnutTool === 'shoe' ? '👟 신발 선택중 (가시밟기)' : '✋ 손 선택중 (밤줍기)';
+      ctx.fillStyle = mgState.chestnutTool === 'shoe' ? '#f6b93b' : '#55efc4';
+      ctx.fillText(toolLabel, 404, 29);
+
+      if (mgState.status === 'playing') {
+        mgState.chestnutSpawnTimer -= dt;
+        if (mgState.chestnutSpawnTimer <= 0 && mgState.chestnutList.length < 5) {
+          mgState.chestnutSpawnTimer = 0.85 + Math.random() * 0.65;
+          let nx = 65 + Math.random() * 290;
+          let ny = 95 + Math.random() * 175;
+          mgState.chestnutList.push({
+            x: nx,
+            y: ny,
+            spikes: Math.random() < 0.45 ? 2 : 1,
+            dropAnim: 1.0
+          });
+        }
+      }
+
+      mgState.chestnutList.forEach((ch) => {
+        if (ch.dropAnim > 0) ch.dropAnim = Math.max(0, ch.dropAnim - dt * 3.5);
+        const offsetY = -ch.dropAnim * 45;
+
+        ctx.save();
+        ctx.translate(ch.x, ch.y + offsetY);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(0, 20 - offsetY, 22, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (ch.spikes > 0) {
+          ctx.fillStyle = ch.spikes === 2 ? '#218c74' : '#6ab04c';
+          ctx.strokeStyle = '#1e272e';
+          ctx.lineWidth = 2;
+          const spikesCount = 12;
+          ctx.beginPath();
+          for (let s = 0; s < spikesCount * 2; s++) {
+            const r = s % 2 === 0 ? 28 : 17;
+            const a = (s * Math.PI) / spikesCount;
+            const px = Math.cos(a) * r;
+            const py = Math.sin(a) * r;
+            if (s === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.font = '24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🌰', 0, 1);
+
+          ctx.font = 'bold 11px "Jua", sans-serif';
+          ctx.fillStyle = '#fff200';
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 3;
+          ctx.strokeText(`가시 ${ch.spikes}회`, 0, -28);
+          ctx.fillText(`가시 ${ch.spikes}회`, 0, -28);
+        } else {
+          ctx.font = '34px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🌰', 0, 0);
+
+          ctx.font = 'bold 11px "Jua", sans-serif';
+          ctx.fillStyle = '#55efc4';
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 3;
+          ctx.strokeText('✨ 줍기 가능!', 0, -26);
+          ctx.fillText('✨ 줍기 가능!', 0, -26);
+        }
+
+        ctx.restore();
+      });
+
+      if (mgState.status === 'fail') {
+        const swellScale = 1.15 + Math.sin(performance.now() * 0.015) * 0.08;
+        ctx.fillStyle = 'rgba(43, 10, 10, 0.72)';
+        ctx.fillRect(0, 0, 420, 315);
+
+        ctx.save();
+        ctx.translate(210, 132);
+        ctx.scale(swellScale, swellScale);
+
+        ctx.fillStyle = '#ff6b6b';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.ellipse(0, 12, 38, 34, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        const fingers = [
+          { x: -34, y: 6, r: 12, a: -0.6 },
+          { x: -20, y: -22, r: 12, a: -0.2 },
+          { x: 0, y: -28, r: 13, a: 0 },
+          { x: 20, y: -22, r: 12, a: 0.2 },
+          { x: 34, y: -8, r: 11, a: 0.45 }
+        ];
+        fingers.forEach((f) => {
+          ctx.beginPath();
+          ctx.ellipse(f.x, f.y, f.r, f.r * 1.45, f.a, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = '#ffeaa7';
+        ctx.fillRect(-14, 4, 28, 11);
+        ctx.strokeRect(-14, 4, 28, 11);
+        ctx.font = '26px sans-serif';
+        ctx.fillText('💢', -44, -28);
+        ctx.fillText('💦', 42, -26);
+        ctx.restore();
+
+        ctx.font = 'bold 25px "Jua", sans-serif';
+        ctx.fillStyle = '#fffa65';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 5;
+        ctx.textAlign = 'center';
+        ctx.strokeText('아야야!! 손이 퉁퉁 부었어요!!', 210, 235);
+        ctx.fillText('아야야!! 손이 퉁퉁 부었어요!!', 210, 235);
+      }
+    }
+
     const CAMPING_ASSET_MANIFEST = {
       '텐트': [
         { file: '낡은텐트.png', name: '낡은 텐트', fallbackType: 'tent_old', unlocked: true },
@@ -1391,208 +1873,6 @@
       });
     }
 
-    async function handleZipFileUpload(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-
-      try {
-        const zip = await JSZip.loadAsync(file);
-        const pngEntries = [];
-
-        zip.forEach((relativePath, entry) => {
-          if (!entry.dir && /\.png$/i.test(entry.name) && !entry.name.includes('__MACOSX')) {
-            const base = entry.name.split('/').pop();
-            if (base && !base.startsWith('._')) {
-              pngEntries.push(entry);
-            }
-          }
-        });
-
-        if (pngEntries.length === 0) {
-          showToast('⚠️ ZIP 파일 안에서 PNG 이미지를 찾지 못했습니다.');
-          return;
-        }
-
-        const records = [];
-        for (const entry of pngEntries) {
-          const parts = entry.name.split('/').filter(Boolean);
-          const fileName = parts[parts.length - 1];
-          const folderName = parts.length >= 2 ? parts[parts.length - 2] : '캠핑_아이템';
-          const blob = await entry.async('blob');
-          records.push({ folderName, fileName, blob });
-        }
-
-        const ok = await buildCatalogFromBlobRecords(records, 'ZIP 연결 완료');
-        if (!ok) return;
-
-        await saveAssetsToIndexedDB(records, 'ZIP 연결 완료');
-        closeAssetLoaderModal();
-
-        playPyororongSound();
-        showToast(`📦 ZIP 연결 및 자동 저장 완료! (${Object.keys(ASSET_CATALOG).length}개 폴더 탭)`);
-      } catch (err) {
-        console.error(err);
-        showToast('❌ ZIP 파일을 읽는 중 오류가 발생했습니다.');
-      }
-      event.target.value = '';
-    }
-
-    // 압축 해제된 폴더(<input type="file" webkitdirectory>) 직접 선택 처리
-    async function handleFolderUpload(event) {
-      const files = Array.from(event.target.files || []);
-      if (files.length === 0) return;
-
-      const pngFiles = files.filter((f) => /\.png$/i.test(f.name) && !f.name.startsWith('._'));
-      if (pngFiles.length === 0) {
-        showToast('⚠️ 선택한 폴더 안에서 PNG 파일을 찾지 못했습니다.');
-        return;
-      }
-
-      const records = [];
-      for (const file of pngFiles) {
-        const rel = file.webkitRelativePath || file.name;
-        const parts = rel.split('/').filter(Boolean);
-        const fileName = parts[parts.length - 1];
-        let folderName = '캠핑_아이템';
-        if (parts.length >= 3) folderName = parts[parts.length - 2];
-        else if (parts.length === 2) folderName = parts[0];
-
-        records.push({ folderName, fileName, blob: file });
-      }
-
-      const ok = await buildCatalogFromBlobRecords(records, '로컬 폴더 연결 완료');
-      if (!ok) return;
-
-      await saveAssetsToIndexedDB(records, '로컬 폴더 연결 완료');
-      closeAssetLoaderModal();
-
-      playPyororongSound();
-      showToast(`📁 폴더 연결 및 자동 저장 완료! (${Object.keys(ASSET_CATALOG).length}개 폴더 탭)`);
-      event.target.value = '';
-    }
-
-    // 압축 해제된 폴더(<input type="file" webkitdirectory>) 직접 선택 처리
-    async function handleFolderUpload(event) {
-      const files = Array.from(event.target.files || []);
-      if (files.length === 0) return;
-
-      const pngFiles = files.filter((f) => /\.png$/i.test(f.name) && !f.name.startsWith('._'));
-      if (pngFiles.length === 0) {
-        showToast('⚠️ 선택한 폴더 안에서 PNG 파일을 찾지 못했습니다.');
-        return;
-      }
-
-      while (activeBlobUrls.length > 0) {
-        URL.revokeObjectURL(activeBlobUrls.pop());
-      }
-
-      const newCatalog = {};
-      let starterUnlockedAssigned = false;
-
-      for (const file of pngFiles) {
-        const rel = file.webkitRelativePath || file.name;
-        const parts = rel.split('/').filter(Boolean);
-        const fileName = parts[parts.length - 1];
-        const lower = fileName.toLowerCase();
-
-        const blobUrl = URL.createObjectURL(file);
-        activeBlobUrls.push(blobUrl);
-
-        if (lower === 'background.png' || /^character[123]\.png$/.test(lower)) {
-          replaceCoreSpriteFromUrl(lower, blobUrl);
-          continue;
-        }
-
-        // webkitRelativePath 예: "camping_asset/텐트/낡은텐트.png" -> 폴더명 "텐트"
-        let folderName = '캠핑_아이템';
-        if (parts.length >= 3) {
-          folderName = parts[parts.length - 2];
-        } else if (parts.length === 2) {
-          folderName = parts[0];
-        }
-
-        if (!newCatalog[folderName]) newCatalog[folderName] = [];
-
-        const itemId = `${folderName}__${fileName}`;
-        const cleanName = stripPngExt(fileName);
-        const isOldTent = /낡은|old/i.test(cleanName);
-
-        const itemObj = {
-          id: itemId,
-          name: cleanName,
-          fileName: fileName,
-          folder: folderName,
-          src: blobUrl,
-          fallbackType: 'tent_old',
-          unlocked: false
-        };
-
-        if (isOldTent && !starterUnlockedAssigned) {
-          itemObj.unlocked = true;
-          starterUnlockedAssigned = true;
-        }
-
-        const img = new Image();
-        img.src = blobUrl;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-        loadedItemImages[itemId] = img;
-
-        newCatalog[folderName].push(itemObj);
-      }
-
-      const folderKeys = Object.keys(newCatalog);
-      if (folderKeys.length === 0) return;
-
-      folderKeys.forEach((fk) => {
-        newCatalog[fk].sort((a, b) => a.fileName.localeCompare(b.fileName, 'ko', { numeric: true }));
-      });
-
-      if (!starterUnlockedAssigned) {
-        const preferredTab = folderKeys.find((k) => /텐트|tent/i.test(k)) || folderKeys[0];
-        if (newCatalog[preferredTab] && newCatalog[preferredTab][0]) {
-          newCatalog[preferredTab][0].unlocked = true;
-        }
-      }
-
-      ASSET_CATALOG = newCatalog;
-      gameState.activeTab = folderKeys[0];
-
-      updateAssetStatusIndicator(`로컬 폴더 연결 완료 (${folderKeys.length}개 탭)`);
-      closeAssetLoaderModal();
-
-      if (!document.getElementById('inventoryModal').classList.contains('hidden')) {
-        renderInventoryTabs();
-        renderInventoryGrid();
-      }
-
-      playPyororongSound();
-      showToast(`📁 로컬 폴더 연결 완료! (${folderKeys.length}개 폴더 탭 생성)`);
-      event.target.value = '';
-    }
-
-    function replaceCoreSpriteFromUrl(lowerFileName, url) {
-      const img = new Image();
-      img.onload = () => {
-        if (lowerFileName === 'background.png') sprites.bg = img;
-        else if (lowerFileName === 'character1.png') sprites.chars[1] = img;
-        else if (lowerFileName === 'character2.png') sprites.chars[2] = img;
-        else if (lowerFileName === 'character3.png') sprites.chars[3] = img;
-      };
-      img.src = url;
-    }
-
-    function openAssetLoaderModal() {
-      playClickSound();
-      document.getElementById('assetLoaderModal').classList.remove('hidden');
-    }
-
-    function closeAssetLoaderModal() {
-      document.getElementById('assetLoaderModal').classList.add('hidden');
-    }
-
     /**
      * =========================================================================
      * 전역 게임 상태 관리
@@ -1607,7 +1887,7 @@
       placingItem: null,        // 현재 배치 중인 아이템 객체
       selectedPlacedUid: null,  // 클릭하여 선택된 배치 아이템 UID
       mousePos: { x: 0, y: 0, active: false },
-      placedItems: [],          // 캠핑장에 배치된 아이템 목록 { uid, itemId, x, y, scale }
+      placedItems: [],          // 캠핑장에 배치된 아이템 목록 { uid, itemId, x, y, scale, zOrder }
       sparkles: [],             // 전체 화면 '뾰로롱' 파티클 목록
       soundEnabled: true,
       starterGiftShown: false
@@ -1729,11 +2009,6 @@
     /**
      * =========================================================================
      * 스프라이트 시트 로더 & 도트 픽셀 오프스크린 폴백(Fallback) 생성기
-     * -------------------------------------------------------------------------
-     * - 첨부된 background.png, character1.png, character2.png, character3.png를
-     *   우선 로드하고, 파일 경로가 없는 독립 실행 환경에서도 깨짐 없이 동일한
-     *   규격(background: 256x224, character: 6열x6행 192x192)의 도트 픽셀 아트를
-     *   자동으로 합성해 완벽하게 렌더링합니다.
      * =========================================================================
      */
     const sprites = {
@@ -1760,14 +2035,12 @@
 
       // 2) 나무 3종 (소/중/대 소나무)
       function drawPineTree(ox, oy, w, h) {
-        // 줄기
         ctx.fillStyle = '#5c330a';
         ctx.fillRect(ox + w / 2 - 4, oy + h - 14, 8, 14);
         ctx.strokeStyle = '#1b0f04';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(ox + w / 2 - 4, oy + h - 14, 8, 14);
 
-        // 3단 잎사귀
         const tiers = 3;
         for (let i = 0; i < tiers; i++) {
           const tw = w * (0.55 + i * 0.22);
@@ -1784,11 +2057,11 @@
           ctx.stroke();
         }
       }
-      drawPineTree(130, 14, 30, 50);  // 소나무(소)
-      drawPineTree(164, 14, 38, 76);  // 소나무(중)
-      drawPineTree(206, 4, 46, 90);   // 소나무(대)
+      drawPineTree(130, 14, 30, 50);
+      drawPineTree(164, 14, 38, 76);
+      drawPineTree(206, 4, 46, 90);
 
-      // 3) 덤불 (82, 20, 42x38)
+      // 3) 덤불
       ctx.fillStyle = '#198712';
       ctx.beginPath();
       ctx.arc(103, 40, 18, 0, Math.PI * 2);
@@ -1799,7 +2072,6 @@
       for (let i = 0; i < 12; i++) {
         ctx.fillRect(4 + (i % 3) * 10, 68 + Math.floor(i / 3) * 14, 5, 5);
       }
-      // 빨간 버섯
       [[38, 86], [52, 84], [44, 102], [56, 104]].forEach(([mx, my]) => {
         ctx.fillStyle = '#fff5e4';
         ctx.fillRect(mx - 2, my, 4, 6);
@@ -1812,7 +2084,7 @@
         ctx.fillRect(mx + 1, my - 3, 2, 2);
       });
 
-      // 5) 캠핑 안내 표지판 (66, 98, 28x26)
+      // 5) 캠핑 안내 표지판
       ctx.fillStyle = '#6b421c';
       ctx.fillRect(70, 118, 4, 6);
       ctx.fillRect(86, 118, 4, 6);
@@ -1828,11 +2100,10 @@
       ctx.closePath();
       ctx.fill();
 
-      // 6) 통나무 울타리 프레임 (0, 128, 96x96)
+      // 6) 통나무 울타리 프레임
       ctx.fillStyle = '#8c5319';
       ctx.strokeStyle = '#261404';
       ctx.lineWidth = 1.5;
-      // 가로/세로 통나무 조각들
       for (let i = 0; i < 3; i++) {
         ctx.fillRect(8 + i * 28, 129, 24, 6);
         ctx.strokeRect(8 + i * 28, 129, 24, 6);
@@ -1844,7 +2115,7 @@
         ctx.strokeRect(89, 134 + i * 28, 5, 24);
       }
 
-      // 7) 둥근 모서리 모래/흙 캠핑 구역 타일 (98, 130, 90x90)
+      // 7) 둥근 모서리 모래/흙 캠핑 구역 타일
       ctx.fillStyle = '#a88454';
       ctx.beginPath();
       ctx.roundRect(99, 131, 88, 88, 8);
@@ -1857,7 +2128,6 @@
     }
 
     function createFallbackCharacterSheet(charId) {
-      // 6열 x 6행, 각 프레임 32x32 => 192x192
       const c = document.createElement('canvas');
       c.width = 192;
       c.height = 192;
@@ -1865,13 +2135,12 @@
       ctx.imageSmoothingEnabled = false;
 
       const palettes = {
-        1: { hair: '#3d3b40', shirt: '#009688', vest: '#ff6d00', pants: '#3b5998' }, // 캐릭터 1: 청록+주황조끼
-        2: { hair: '#ff7b00', shirt: '#ffffff', vest: '#f5f6fa', pants: '#b5651d' }, // 캐릭터 2: 오렌지머리+화이트탑
-        3: { hair: '#2f3542', shirt: '#273c75', vest: '#fbc531', pants: '#192a56' }  // 캐릭터 3: 네이비+노랑카라
+        1: { hair: '#3d3b40', shirt: '#009688', vest: '#ff6d00', pants: '#3b5998' },
+        2: { hair: '#ff7b00', shirt: '#ffffff', vest: '#f5f6fa', pants: '#b5651d' },
+        3: { hair: '#2f3542', shirt: '#273c75', vest: '#fbc531', pants: '#192a56' }
       };
       const pal = palettes[charId] || palettes[1];
 
-      // 6행: 0(아래대기), 1(아래걷기), 2(오른쪽대기), 3(오른쪽걷기), 4(위대기), 5(위걷기)
       for (let row = 0; row < 6; row++) {
         const cols = (row % 2 === 0) ? 2 : 6;
         for (let col = 0; col < cols; col++) {
@@ -1880,13 +2149,11 @@
           const bob = (row % 2 === 1 && col % 2 === 1) ? -1 : 0;
           const step = (row % 2 === 1) ? Math.sin((col / 6) * Math.PI * 2) * 2 : 0;
 
-          // 그림자
           ctx.fillStyle = 'rgba(0,0,0,0.22)';
           ctx.beginPath();
           ctx.ellipse(ox + 16, oy + 29, 7, 2.5, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          // 다리 & 신발
           ctx.fillStyle = pal.pants;
           ctx.fillRect(ox + 11, oy + 21 + bob, 4, 6 + (step > 0 ? -1 : 0));
           ctx.fillRect(ox + 17, oy + 21 + bob, 4, 6 + (step < 0 ? -1 : 0));
@@ -1894,7 +2161,6 @@
           ctx.fillRect(ox + 11, oy + 26 + bob, 4, 2);
           ctx.fillRect(ox + 17, oy + 26 + bob, 4, 2);
 
-          // 몸통
           ctx.fillStyle = pal.shirt;
           ctx.fillRect(ox + 10, oy + 14 + bob, 12, 8);
           if (charId === 1) {
@@ -1905,30 +2171,24 @@
             ctx.fillRect(ox + 14, oy + 14 + bob, 4, 2);
           }
 
-          // 팔
           ctx.fillStyle = '#ffcca3';
           ctx.fillRect(ox + 8, oy + 15 + bob - step * 0.5, 2, 5);
           ctx.fillRect(ox + 22, oy + 15 + bob + step * 0.5, 2, 5);
 
-          // 머리
           ctx.fillStyle = '#ffcca3';
           ctx.fillRect(ox + 10, oy + 5 + bob, 12, 9);
 
-          // 머리카락
           ctx.fillStyle = pal.hair;
           if (row >= 4) {
-            // 뒷모습
             ctx.fillRect(ox + 9, oy + 3 + bob, 14, 11);
           } else {
             ctx.fillRect(ox + 9, oy + 3 + bob, 14, 4);
             ctx.fillRect(ox + 9, oy + 5 + bob, 2, 5);
             ctx.fillRect(ox + 21, oy + 5 + bob, 2, 5);
             if (charId === 2) {
-              // 긴 머리 포인트
               ctx.fillRect(ox + 8, oy + 7 + bob, 3, 7);
               ctx.fillRect(ox + 21, oy + 7 + bob, 3, 7);
             }
-            // 눈 (앞/옆)
             ctx.fillStyle = '#1e272e';
             if (row <= 1) {
               ctx.fillRect(ox + 12, oy + 9 + bob, 2, 2);
@@ -1972,10 +2232,6 @@
     /**
      * =========================================================================
      * 아이템 렌더러 (실제 PNG 이미지 원본 도트 픽셀 비율 100% 유지)
-     * -------------------------------------------------------------------------
-     * - 각 아이템의 원본 자연 해상도(naturalWidth, naturalHeight)를 그대로 반영하되,
-     *   지나치게 크거나 작은 이미지만 고정 스케일로 정돈하여 크기가 들쭉날쭉하지 않고
-     *   오리지널 픽셀 감성을 온전히 유지하도록 개선합니다.
      * =========================================================================
      */
     function drawItemVisual(ctx, itemOrId, cx, cy, scale = 1, alpha = 1) {
@@ -1983,7 +2239,6 @@
       const itemId = itemObj ? itemObj.id : itemOrId;
       const realImg = loadedItemImages[itemId];
 
-      // 1) 실제 로컬 PNG 이미지가 로딩된 경우 원본 픽셀 비율 고정 렌더링
       if (realImg && realImg.complete && realImg.naturalWidth > 0) {
         ctx.save();
         ctx.translate(cx, cy);
@@ -1993,26 +2248,20 @@
 
         const nw = realImg.naturalWidth;
         const nh = realImg.naturalHeight;
-        
-        // 원본 이미지 고유 크기를 기준으로 일관된 픽셀 배율 적용 (들쭉날쭉 방지)
-        // 스프라이트 시트가 아웃라인 여백을 포함한 표준 그리드이므로 동일한 기준 스케일 적용
         const baseFactor = 1.65;
         const dw = nw * baseFactor;
         const dh = nh * baseFactor;
 
-        // 은은한 바닥 그림자
         ctx.fillStyle = 'rgba(25, 18, 8, 0.22)';
         ctx.beginPath();
         ctx.ellipse(0, dh * 0.35, Math.max(14, dw * 0.32), 6.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 하단 기준점 정렬로 바닥에 자연스럽게 안착
         ctx.drawImage(realImg, -dw / 2, -dh * 0.65, dw, dh);
         ctx.restore();
         return;
       }
 
-      // 2) 실제 파일이 아직 연결되지 않은 경우 내장 도트 픽셀 아트로 렌더링
       const fallbackKey = (itemObj && itemObj.fallbackType) ? itemObj.fallbackType : itemId;
       drawFallbackPixelArt(ctx, fallbackKey, cx, cy, scale, alpha);
     }
@@ -2024,7 +2273,6 @@
       ctx.globalAlpha = alpha;
       ctx.imageSmoothingEnabled = false;
 
-      // 공통 바닥 그림자
       ctx.fillStyle = 'rgba(25, 18, 8, 0.24)';
       ctx.beginPath();
       ctx.ellipse(0, 18, 28, 9, 0, 0, Math.PI * 2);
@@ -2032,7 +2280,6 @@
 
       switch (itemId) {
         case 'tent_old': {
-          // 낡은 텐트 (기본 지급): 베이지/카키 캔버스 + 귀여운 기운 패치
           ctx.fillStyle = '#8b6f47';
           ctx.beginPath();
           ctx.moveTo(-34, 18);
@@ -2074,7 +2321,6 @@
         }
 
         case 'tent_triangle': {
-          // 삼각 A형 텐트
           ctx.fillStyle = '#e67e22';
           ctx.beginPath();
           ctx.moveTo(-38, 18);
@@ -2107,7 +2353,6 @@
         }
 
         case 'tent_dome': {
-          // 스카이 돔 텐트
           ctx.fillStyle = '#48dbfb';
           ctx.beginPath();
           ctx.arc(0, 16, 34, Math.PI, 0);
@@ -2131,7 +2376,6 @@
         }
 
         case 'tent_tarp': {
-          // 우드 헥사 타프
           ctx.strokeStyle = '#5c3a21';
           ctx.lineWidth = 3;
           ctx.beginPath();
@@ -2157,7 +2401,6 @@
         }
 
         case 'fire_pit': {
-          // 돌담 모닥불
           const stones = [[-16,14],[-8,18],[0,19],[8,18],[16,14],[-12,10],[12,10]];
           stones.forEach(([sx, sy]) => {
             ctx.fillStyle = '#7f8c8d';
@@ -2168,10 +2411,8 @@
             ctx.lineWidth = 1.8;
             ctx.stroke();
           });
-          // 장작
           ctx.fillStyle = '#6e3b17';
           ctx.fillRect(-10, 8, 20, 5);
-          // 불꽃
           ctx.fillStyle = '#e74c3c';
           ctx.beginPath();
           ctx.moveTo(-10, 10);
@@ -2188,7 +2429,6 @@
         }
 
         case 'lantern_stand': {
-          // 빈티지 랜턴 걸이
           ctx.strokeStyle = '#2b180c';
           ctx.lineWidth = 3;
           ctx.beginPath();
@@ -2196,7 +2436,6 @@
           ctx.lineTo(-6, -24);
           ctx.quadraticCurveTo(-6, -30, 6, -26);
           ctx.stroke();
-          // 랜턴
           ctx.fillStyle = '#f9ca24';
           ctx.fillRect(1, -20, 10, 12);
           ctx.strokeStyle = '#2b180c';
@@ -2208,7 +2447,6 @@
         }
 
         case 'string_lights': {
-          // 별빛 가랜드 전구
           ctx.strokeStyle = '#4a2e1b';
           ctx.lineWidth = 3;
           ctx.beginPath();
@@ -2238,7 +2476,6 @@
         }
 
         case 'torch_lamp': {
-          // 대나무 횃불
           ctx.fillStyle = '#6ab04c';
           ctx.fillRect(-3, -10, 6, 30);
           ctx.strokeStyle = '#2b180c';
@@ -2256,7 +2493,6 @@
         }
 
         case 'chair_wood': {
-          // 접이식 우드 체어
           ctx.strokeStyle = '#5c3a21';
           ctx.lineWidth = 3;
           ctx.beginPath();
@@ -2277,7 +2513,6 @@
         }
 
         case 'table_roll': {
-          // 롤탑 우드 테이블
           ctx.strokeStyle = '#4a2e1b';
           ctx.lineWidth = 3;
           ctx.beginPath();
@@ -2296,7 +2531,6 @@
         }
 
         case 'hammock': {
-          // 무지개 해먹
           ctx.strokeStyle = '#5c3a21';
           ctx.lineWidth = 4;
           ctx.beginPath();
@@ -2319,7 +2553,6 @@
         }
 
         case 'log_bench': {
-          // 통나무 벤치
           ctx.fillStyle = '#6e3b17';
           ctx.fillRect(-22, 8, 6, 11);
           ctx.fillRect(16, 8, 6, 11);
@@ -2334,7 +2567,6 @@
         }
 
         case 'kettle_stove': {
-          // 버너와 주전자
           ctx.fillStyle = '#636e72';
           ctx.fillRect(-12, 8, 24, 10);
           ctx.strokeStyle = '#2b180c';
@@ -2352,7 +2584,6 @@
         }
 
         case 'cooler_box': {
-          // 레트로 아이스박스
           ctx.fillStyle = '#eb4d4b';
           ctx.fillRect(-16, -2, 32, 20);
           ctx.strokeStyle = '#2b180c';
@@ -2365,7 +2596,6 @@
         }
 
         case 'picnic_basket': {
-          // 피크닉 바구니
           ctx.strokeStyle = '#8c5830';
           ctx.lineWidth = 3;
           ctx.beginPath();
@@ -2383,7 +2613,6 @@
         }
 
         case 'guitar_wood': {
-          // 통기타
           ctx.fillStyle = '#e58e26';
           ctx.beginPath();
           ctx.arc(0, 10, 10, 0, Math.PI * 2);
@@ -2402,7 +2631,6 @@
         }
 
         case 'wood_pile': {
-          // 장작 더미
           const logs = [[-12,14],[0,14],[12,14],[-6,6],[6,6],[0,-2]];
           logs.forEach(([lx, ly]) => {
             ctx.fillStyle = '#a66e44';
@@ -2421,7 +2649,6 @@
         }
 
         case 'flower_patch': {
-          // 야생화 꽃밭
           ctx.fillStyle = '#44bd32';
           ctx.beginPath();
           ctx.ellipse(0, 12, 22, 9, 0, 0, Math.PI * 2);
@@ -2439,7 +2666,6 @@
         }
 
         case 'camp_sign': {
-          // 캠핑장 이정표
           ctx.fillStyle = '#5c3a21';
           ctx.fillRect(-3, -14, 6, 34);
           ctx.strokeStyle = '#2b180c';
@@ -2460,7 +2686,6 @@
         }
 
         case 'stump_mushroom': {
-          // 버섯 그루터기
           ctx.fillStyle = '#8c5830';
           ctx.fillRect(-12, 2, 24, 16);
           ctx.strokeStyle = '#2b180c';
@@ -2471,7 +2696,6 @@
           ctx.ellipse(0, 2, 12, 4, 0, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
-          // 빨간 버섯
           ctx.fillStyle = '#fff';
           ctx.fillRect(6, -4, 4, 6);
           ctx.fillStyle = '#e84118';
@@ -2486,7 +2710,6 @@
       ctx.restore();
     }
 
-    // 아이템 ID로 카탈로그 메타데이터 찾기
     function findItemById(id) {
       for (const folder of Object.keys(ASSET_CATALOG)) {
         const found = ASSET_CATALOG[folder].find((it) => it.id === id);
@@ -2495,7 +2718,6 @@
       return null;
     }
 
-    // 기본 잠금 해제된 선물 아이템(낡은 텐트) 찾기
     function getStarterGiftItem() {
       for (const folder of Object.keys(ASSET_CATALOG)) {
         const unlocked = ASSET_CATALOG[folder].find((it) => it.unlocked);
@@ -2535,19 +2757,15 @@
       gameState.playerName = rawName || '숲속탐험가';
       gameState.started = true;
 
-      // 상단 간판 업데이트
       document.getElementById('hudCampTitle').textContent = `${gameState.playerName}의 캠핑장`;
       document.getElementById('welcomeUserName').textContent = gameState.playerName;
 
-      // 입장 화면 닫고 HUD 표시
       document.getElementById('entryScreen').classList.add('hidden');
       document.getElementById('hudLayer').classList.remove('hidden');
 
-      // 캐릭터 초기 위치 중앙 배치
       camperAI.x = (campBounds.left + campBounds.right) / 2;
       camperAI.y = (campBounds.top + campBounds.bottom) / 2 + 20;
 
-      // 첫 입장 튜토리얼: 낡은 텐트 선물 모달 오픈
       if (!gameState.starterGiftShown) {
         gameState.starterGiftShown = true;
         const starterItem = getStarterGiftItem();
@@ -2640,7 +2858,6 @@
           ? 'bg-[#fffaf0] border-3 border-[#2b180c] rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#fff3d1] hover:-translate-y-0.5 transition shadow-sm'
           : 'bg-[#e5dccb] border-2 border-[#a8987c] rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer relative overflow-hidden hover:border-[#74492b] transition';
 
-        // 아이템 도트 프리뷰 Canvas
         const previewWrap = document.createElement('div');
         previewWrap.className = 'w-20 h-20 rounded-xl bg-[#e8f3dc] border-2 border-[#b5cfa0] flex items-center justify-center relative mb-2';
 
@@ -2651,7 +2868,6 @@
         drawItemVisual(pCtx, item, 40, 44, 0.9, item.unlocked ? 1 : 0.35);
         previewWrap.appendChild(pCanvas);
 
-        // 잠긴 아이템 자물쇠 오버레이
         if (!item.unlocked) {
           const lockOverlay = document.createElement('div');
           lockOverlay.className = 'absolute inset-0 bg-[#2b180c]/45 rounded-lg flex flex-col items-center justify-center text-white';
@@ -2664,7 +2880,6 @@
 
         card.appendChild(previewWrap);
 
-        // 아이템 이름 및 상태 배지
         const titleEl = document.createElement('div');
         titleEl.className = `text-sm font-bold ${item.unlocked ? 'text-[#2b180c]' : 'text-[#6e5d46]'}`;
         titleEl.textContent = item.name;
@@ -2682,12 +2897,10 @@
 
     function handleInventoryItemClick(item) {
       if (item.unlocked) {
-        // 해금된 아이템 -> 인벤토리 닫고 배치 모드로 전환
         playClickSound();
         document.getElementById('inventoryModal').classList.add('hidden');
         startPlacementMode(item);
       } else {
-        // 미해금 아이템 -> 열쇠 보유 여부에 따라 해금 또는 게임 유도 알림
         if (gameState.keys >= 1) {
           gameState.keys -= 1;
           item.unlocked = true;
@@ -2819,7 +3032,6 @@
     function triggerFullScreenSparkles(originX, originY) {
       const colors = ['#fff200', '#fffa65', '#ff9ff3', '#7bed9f', '#70a1ff', '#ffffff', '#ffbe76'];
 
-      // 1) 배치 지점 중심 집중 반짝이
       for (let i = 0; i < 42; i++) {
         const angle = (Math.PI * 2 * i) / 42 + Math.random() * 0.3;
         const speed = 40 + Math.random() * 190;
@@ -2836,7 +3048,6 @@
         });
       }
 
-      // 2) 전체 화면에 퍼지는 뾰로롱 별빛 샤워
       for (let i = 0; i < 65; i++) {
         gameState.sparkles.push({
           x: Math.random() * canvas.width,
@@ -2857,7 +3068,7 @@
         const p = gameState.sparkles[i];
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.vy += 45 * dt; // 미세한 중력
+        p.vy += 45 * dt;
         p.life -= p.decay * dt;
 
         if (p.life <= 0) {
@@ -2872,7 +3083,6 @@
 
         const s = p.size * (0.6 + Math.sin(p.life * 14) * 0.35);
         if (p.shape === 'star') {
-          // 4각 십자 반짝이 별
           ctx.beginPath();
           ctx.moveTo(0, -s * 1.5);
           ctx.lineTo(s * 0.35, -s * 0.35);
@@ -2919,7 +3129,6 @@
         bottom: canvas.height - padBottom
       };
 
-      // 캐릭터가 새 경계 밖으로 나가지 않도록 보정
       if (camperAI.x === 0 && camperAI.y === 0) {
         camperAI.x = canvas.width / 2;
         camperAI.y = canvas.height / 2 + 20;
@@ -2931,7 +3140,6 @@
 
     window.addEventListener('resize', resizeCanvas);
 
-    // 마우스 & 터치 좌표 추적 및 바닥 클릭 배치
     function getPointerPos(evt) {
       const rect = canvas.getBoundingClientRect();
       const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
@@ -2956,13 +3164,11 @@
       if (!gameState.started) return;
       const pos = getPointerPos(e);
 
-      // 1) 배치 모드 중일 때: 바닥 클릭 시 아이템 배치 완료
       if (gameState.placingItem) {
         const placeX = Math.max(campBounds.left + 24, Math.min(campBounds.right - 24, pos.x));
         const placeY = Math.max(campBounds.top + 20, Math.min(campBounds.bottom - 16, pos.y));
 
         const placedItem = gameState.placingItem;
-        const minZ = gameState.placedItems.reduce((acc, it) => Math.min(acc, it.zOrder || 0), 0);
         gameState.placedItems.push({
           uid: Date.now() + Math.random(),
           itemId: placedItem.id,
@@ -2974,11 +3180,9 @@
 
         updatePlacedCount();
 
-        // 배치 완료! 전체 화면 '반짝이는 뾰로롱' 효과 + 사운드
         playPyororongSound();
         triggerFullScreenSparkles(placeX, placeY);
 
-        // 배치 모드 종료
         gameState.placingItem = null;
         document.getElementById('placementBanner').classList.add('hidden');
         document.getElementById('bottomToolbar').classList.remove('hidden');
@@ -2986,7 +3190,6 @@
         return;
       }
 
-      // 2) 일반 모드일 때: 이미 배치된 아이템을 클릭하면 이동/회수 팝업 오픈
       for (let i = gameState.placedItems.length - 1; i >= 0; i--) {
         const p = gameState.placedItems[i];
         if (Math.abs(pos.x - p.x) <= 34 && Math.abs(pos.y - p.y) <= 34) {
@@ -3052,7 +3255,6 @@
       showToast(`🎒 [${meta ? meta.name : '아이템'}]을(를) 인벤토리로 회수했습니다.`);
     }
 
-    // 배경(잔디 타일, 모래 구역, 통나무 울타리, 나무, 표지판) 렌더링
     function renderCampsiteBackground(ctx) {
       const W = canvas.width;
       const H = canvas.height;
@@ -3061,7 +3263,6 @@
       ctx.save();
       ctx.imageSmoothingEnabled = false;
 
-      // 1) 전체 화면 잔디 타일 반복 렌더링 (background.png 좌상단 64x64 영역)
       if (bgImg) {
         const sw = bgImg.width || 256;
         const sh = bgImg.height || 224;
@@ -3079,7 +3280,6 @@
         ctx.fillRect(0, 0, W, H);
       }
 
-      // 2) 중앙 아늑한 모래/흙 캠핑 구역 (background.png 우하단 모래 타일 활용)
       const campW = campBounds.right - campBounds.left;
       const campH = campBounds.bottom - campBounds.top;
 
@@ -3092,7 +3292,6 @@
       ctx.strokeStyle = '#876336';
       ctx.stroke();
 
-      // 내부 모래 질감 디테일
       ctx.fillStyle = 'rgba(120, 82, 38, 0.16)';
       for (let i = 0; i < 24; i++) {
         const px = campBounds.left + 25 + ((i * 97) % Math.max(40, campW - 50));
@@ -3101,17 +3300,14 @@
       }
       ctx.restore();
 
-      // 3) 통나무 울타리 테두리 렌더링
       drawLogFenceBorder(ctx, campBounds.left - 8, campBounds.top - 8, campW + 16, campH + 16);
 
-      // 4) 외곽 숲속 소나무, 덤불, 버섯, 캠핑 표지판 장식 (background.png 크롭 활용)
       if (bgImg) {
         const sw = bgImg.width || 256;
         const sh = bgImg.height || 224;
         const scaleX = sw / 256;
         const scaleY = sh / 224;
 
-        // 상단 좌/우 소나무 숲
         const treePositions = [
           { x: 18, y: 12, type: 'big' },
           { x: 72, y: 24, type: 'mid' },
@@ -3131,14 +3327,11 @@
           }
         });
 
-        // 캠핑장 입구(하단 중앙) 통로 및 안내 표지판
         const gateX = W / 2;
         const gateY = campBounds.bottom;
         ctx.fillStyle = '#b58d58';
         ctx.fillRect(gateX - 36, gateY - 6, 72, 26);
-        // 표지판 스프라이트 (66, 98, 28x26)
         ctx.drawImage(bgImg, 66 * scaleX, 98 * scaleY, 28 * scaleX, 26 * scaleY, gateX + 44, gateY - 12, 42, 39);
-        // 빨간 버섯 포인트
         ctx.drawImage(bgImg, 32 * scaleX, 76 * scaleY, 30 * scaleX, 34 * scaleY, gateX - 78, gateY - 4, 42, 46);
       }
       ctx.restore();
@@ -3151,19 +3344,15 @@
       ctx.lineWidth = 2;
 
       const seg = 34;
-      // 상단 & 하단 가로 통나무 (하단 중앙은 입구로 비움)
       for (let px = x + 10; px < x + w - 28; px += seg) {
-        // 상단
         ctx.fillRect(px, y, 28, 8);
         ctx.strokeRect(px, y, 28, 8);
-        // 하단 (입구 제외)
         if (Math.abs(px + 14 - (x + w / 2)) > 38) {
           ctx.fillRect(px, y + h - 8, 28, 8);
           ctx.strokeRect(px, y + h - 8, 28, 8);
         }
       }
 
-      // 좌측 & 우측 세로 통나무
       for (let py = y + 10; py < y + h - 28; py += seg) {
         ctx.fillRect(x, py, 8, 28);
         ctx.strokeRect(x, py, 8, 28);
@@ -3173,13 +3362,6 @@
       ctx.restore();
     }
 
-    /**
-     * 캐릭터 스프라이트 시트(6열 x 6행) 단일 프레임 렌더러
-     * - 1행(0): 아래 대기, 2행(1): 아래 걷기(6f)
-     * - 3행(2): 오른쪽 대기, 4행(3): 오른쪽 걷기(6f)
-     * - 5행(4): 위 대기, 6행(5): 위 걷기(6f)
-     * - 왼쪽 이동 시 오른쪽 행을 좌우 반전(scale(-1, 1))하여 사용
-     */
     function drawCharacterFrame(ctx, charId, dir, isWalking, frameIdx, x, y, scale = 1.85) {
       const sheet = sprites.chars[charId];
       if (!sheet) return;
@@ -3219,7 +3401,6 @@
       ctx.restore();
     }
 
-    // 캐릭터 랜덤 방향 걷기 & 멈추기 AI 업데이트
     function updateCamperAI(dt) {
       camperAI.timer -= dt;
       camperAI.frameTimer += dt;
@@ -3232,21 +3413,18 @@
 
       if (camperAI.timer <= 0) {
         if (camperAI.state === 'walk') {
-          // 잠시 멈춰서 주변 구경하기
           camperAI.state = 'idle';
           camperAI.vx = 0;
           camperAI.vy = 0;
           camperAI.timer = 1.2 + Math.random() * 1.8;
           camperAI.frameIndex = 0;
         } else {
-          // 랜덤 방향으로 걷기 시작
           camperAI.state = 'walk';
           camperAI.timer = 1.5 + Math.random() * 2.5;
           const angle = Math.random() * Math.PI * 2;
           camperAI.vx = Math.cos(angle) * camperAI.speed;
           camperAI.vy = Math.sin(angle) * camperAI.speed;
 
-          // 이동 벡터에 따른 캐릭터 바라보는 방향 결정
           if (Math.abs(camperAI.vx) > Math.abs(camperAI.vy)) {
             camperAI.dir = camperAI.vx >= 0 ? 'right' : 'left';
           } else {
@@ -3259,7 +3437,6 @@
         let nextX = camperAI.x + camperAI.vx * dt;
         let nextY = camperAI.y + camperAI.vy * dt;
 
-        // 울타리 충돌 시 반사 처리
         const marginX = 28;
         const marginTop = 34;
         const marginBot = 18;
@@ -3289,7 +3466,6 @@
       }
     }
 
-    // 캐릭터 머리 위 귀여운 닉네임 이름표 렌더링
     function drawCamperNameTag(ctx, x, y, name) {
       ctx.save();
       ctx.font = 'bold 13px "Jua", sans-serif';
@@ -3314,7 +3490,6 @@
       ctx.restore();
     }
 
-    // 입장 화면 캐릭터 카드 1, 2, 3 애니메이션 미리보기 렌더링
     let previewAnimTimer = 0;
     let previewFrame = 0;
 
@@ -3335,11 +3510,6 @@
       });
     }
 
-    /**
-     * =========================================================================
-     * 메인 애니메이션 루프 (Y-Sorting 깊이 정렬 포함)
-     * =========================================================================
-     */
     let lastTimestamp = 0;
 
     function mainLoop(timestamp) {
@@ -3347,17 +3517,13 @@
       const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
       lastTimestamp = timestamp;
 
-      // 1) 배경 렌더링
       renderCampsiteBackground(ctx);
 
       if (!gameState.started) {
-        // 입장 화면일 때는 카드 캐릭터 미리보기 애니메이션 업데이트
         renderEntryPreviews(dt);
       } else {
-        // 캐릭터 랜덤 방향 걷기 AI 업데이트
         updateCamperAI(dt);
 
-        // 3) 레이어 순서(zOrder) 및 Y좌표 기준 정렬: 뒤로 보낸 아이템이 가장 먼저 그려져 맨 뒤에 배치됨
         const renderables = [
           { type: 'camper', y: camperAI.y, zOrder: 0 }
         ];
@@ -3389,7 +3555,6 @@
           }
         });
 
-        // 4) 배치 모드 활성화 시 커서 위치에 반투명 아이템 미리보기 + 배치 가이드 링
         if (gameState.placingItem && gameState.mousePos.active) {
           const px = Math.max(campBounds.left + 24, Math.min(campBounds.right - 24, gameState.mousePos.x));
           const py = Math.max(campBounds.top + 20, Math.min(campBounds.bottom - 16, gameState.mousePos.y));
@@ -3407,7 +3572,6 @@
         }
       }
 
-      // 5) 전체 화면 '반짝이는 뾰로롱' 파티클 렌더링
       if (gameState.sparkles.length > 0) {
         updateAndDrawSparkles(ctx, dt);
       }
@@ -3415,7 +3579,6 @@
       requestAnimationFrame(mainLoop);
     }
 
-    // 페이지 로드 시 초기화 및 루프 시작
     window.onload = async function () {
       await initDefaultAssetCatalog();
       resizeCanvas();
