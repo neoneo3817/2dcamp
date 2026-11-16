@@ -47,7 +47,6 @@
       image-rendering: crisp-edges;
     }
 
-    /* 코지 우드 픽셀 프레임 스타일 */
     .wood-panel {
       background: var(--cream-bg);
       border: 4px solid var(--border-ink);
@@ -126,7 +125,6 @@
       transform: translateY(-3px);
     }
 
-    /* 커스텀 스크롤바 */
     .cozy-scroll::-webkit-scrollbar {
       width: 8px;
       height: 8px;
@@ -161,18 +159,12 @@
 </head>
 <body class="relative w-screen h-screen overflow-hidden">
 
-  <!-- =========================================================
-       [1] 메인 캠핑장 전체 화면 Canvas
-       ========================================================= -->
+  <!-- 메인 캠핑장 전체 화면 Canvas -->
   <canvas id="campCanvas" class="block w-full h-full"></canvas>
 
-  <!-- =========================================================
-       [2] 캠핑장 입장 후 상단 HUD (캠핑장 간판 + 우측 상단 아이콘)
-       ========================================================= -->
+  <!-- 캠핑장 입장 후 상단 HUD -->
   <div id="hudLayer" class="hidden fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-3 sm:p-5">
-    <!-- 상단 바 -->
     <div class="flex items-start justify-between gap-2 w-full">
-      <!-- 좌측 상단: 캠핑장 간판 & 사운드 토글 -->
       <div class="pointer-events-auto flex items-center gap-2">
         <div class="wood-panel px-3.5 py-2 flex items-center gap-2.5">
           <span class="text-xl sm:text-2xl">🏕️</span>
@@ -187,25 +179,20 @@
         </button>
       </div>
 
-      <!-- 우측 상단: 인벤토리 / 게임 / 친구 아이콘 메뉴 -->
       <div class="pointer-events-auto flex flex-wrap justify-end items-center gap-1.5 sm:gap-2.5">
-        <!-- 인벤토리 버튼 -->
         <button onclick="openInventoryModal()" class="btn-pixel btn-amber px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex flex-col items-center justify-center relative min-w-[58px] sm:min-w-[68px]">
           <span class="text-lg sm:text-2xl leading-none">🎒</span>
           <span class="text-[11px] sm:text-xs font-bold mt-1">인벤토리</span>
-          <!-- 보유 열쇠 개수 배지 -->
           <span id="hudKeyBadge" class="hidden absolute -top-2.5 -right-2.5 bg-[#e55039] text-white border-2 border-[#2b180c] rounded-full px-2 py-0.5 text-xs font-bold shadow">
             🔑 0
           </span>
         </button>
 
-        <!-- 친구 버튼 -->
         <button onclick="openFriendsModal()" class="btn-pixel btn-wood px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px]">
           <span class="text-lg sm:text-2xl leading-none">👥</span>
           <span class="text-[11px] sm:text-xs font-bold mt-1">친구</span>
         </button>
 
-        <!-- 게임 버튼 -->
         <button id="hudGameBtn" onclick="openMinigameModal()" class="btn-pixel btn-green px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px]">
           <span class="text-lg sm:text-2xl leading-none">🎮</span>
           <span class="text-[11px] sm:text-xs font-bold mt-1">게임</span>
@@ -213,9 +200,7 @@
       </div>
     </div>
 
-    <!-- 하단 중앙: 배치 모드 가이드 바 / 빠른 관리 버튼 -->
     <div class="flex flex-col items-center gap-2 w-full">
-      <!-- 배치 모드 활성화 시 안내 배너 -->
       <div id="placementBanner" class="hidden pointer-events-auto wood-panel px-4 py-2.5 flex flex-wrap items-center justify-center gap-3 animate-pop">
         <div class="flex items-center gap-2">
           <span class="text-xl animate-bounce">✨</span>
@@ -229,10 +214,11 @@
       </div>
 
       <!-- 일반 모드 하단 툴바 (배치된 아이템 관리) -->
-      <div id="bottomToolbar" class="pointer-events-auto flex flex-wrap items-center justify-center gap-2 bg-[#2b180c]/80 backdrop-blur-sm text-[#fff8eb] px-4 py-1.5 rounded-full border-2 border-[#a66e44] text-xs sm:text-sm">
+      <div id="bottomToolbar" class="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 bg-[#2b180c]/85 backdrop-blur-sm text-[#fff8eb] px-3.5 py-1.5 rounded-2xl sm:rounded-full border-2 border-[#a66e44] text-xs sm:text-sm max-w-[95vw]">
         <span>🌲 배치: <strong id="placedCountText" class="text-[#f6b93b]">0</strong>개</span>
         <span class="opacity-40">|</span>
-        <span class="text-[#ffeaa7]">💡 배치된 아이템 클릭 시 이동/회수</span>
+        <button onclick="openSaveLoadModal('save')" class="text-[#7bed9f] hover:text-[#2ed573] font-bold underline cursor-pointer">💾 저장</button>
+        <button onclick="openSaveLoadModal('load')" class="text-[#70a1ff] hover:text-[#1e90ff] font-bold underline cursor-pointer">📂 불러오기</button>
         <span class="opacity-40">|</span>
         <button onclick="undoLastPlaced()" class="hover:text-[#f6b93b] underline cursor-pointer">마지막 회수</button>
         <span class="opacity-40">|</span>
@@ -241,12 +227,9 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       [3] 입장 화면 (타이틀 & 캐릭터 선택 & 로컬 에셋 연결)
-       ========================================================= -->
+  <!-- 입장 화면 -->
   <div id="entryScreen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#1f3615]/75 backdrop-blur-xs overflow-y-auto">
     <div class="wood-panel w-full max-w-lg overflow-hidden animate-pop my-auto">
-      <!-- 헤더 -->
       <div class="wood-header py-3.5 px-5 text-center">
         <div class="inline-block bg-[#2b180c]/40 px-3 py-0.5 rounded-full text-xs tracking-wider mb-1">
           FOREST CAMP • COZY PIXEL EDITION
@@ -254,9 +237,7 @@
         <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">🏕️ 나만의 숲속 캠핑장</h1>
       </div>
 
-      <!-- 본문 -->
       <div class="p-4 sm:p-5 space-y-5">
-        <!-- 캠핑장 이름 / 닉네임 입력 -->
         <div>
           <label for="playerNameInput" class="block text-sm sm:text-base font-bold mb-1.5 text-[#4a2e1b]">
             1. 캠퍼 이름 (닉네임)을 입력하세요
@@ -271,13 +252,11 @@
           </div>
         </div>
 
-        <!-- 캐릭터 1, 2, 3 선택 -->
         <div>
           <label class="block text-sm sm:text-base font-bold mb-2 text-[#4a2e1b]">
             2. 함께 떠날 캠퍼 캐릭터를 선택하세요
           </label>
           <div class="grid grid-cols-3 gap-2.5">
-            <!-- 캐릭터 1 -->
             <div id="charCard1" onclick="selectCharacter(1)" class="char-card selected p-2.5 flex flex-col items-center">
               <div class="w-16 h-18 bg-[#e8f3dc] rounded-xl border-2 border-[#b5cfa0] flex items-center justify-center overflow-hidden mb-1.5">
                 <canvas id="previewChar1" width="64" height="72"></canvas>
@@ -286,7 +265,6 @@
               <span class="text-[10px] text-[#74492b]">주황 조끼 레인저</span>
             </div>
 
-            <!-- 캐릭터 2 -->
             <div id="charCard2" onclick="selectCharacter(2)" class="char-card p-2.5 flex flex-col items-center">
               <div class="w-16 h-18 bg-[#e8f3dc] rounded-xl border-2 border-[#b5cfa0] flex items-center justify-center overflow-hidden mb-1.5">
                 <canvas id="previewChar2" width="64" height="72"></canvas>
@@ -295,7 +273,6 @@
               <span class="text-[10px] text-[#74492b]">햇살 코랄 백패커</span>
             </div>
 
-            <!-- 캐릭터 3 -->
             <div id="charCard3" onclick="selectCharacter(3)" class="char-card p-2.5 flex flex-col items-center">
               <div class="w-16 h-18 bg-[#e8f3dc] rounded-xl border-2 border-[#b5cfa0] flex items-center justify-center overflow-hidden mb-1.5">
                 <canvas id="previewChar3" width="64" height="72"></canvas>
@@ -306,7 +283,6 @@
           </div>
         </div>
 
-        <!-- 입장 버튼 -->
         <button onclick="enterCampsite()" class="btn-pixel btn-green w-full py-3.5 text-lg sm:text-xl font-bold flex items-center justify-center gap-2">
           <span>🌲</span>
           <span>캠핑장 입장하기</span>
@@ -315,9 +291,7 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       [4] 첫 입장 튜토리얼: 기본 낡은 텐트 선물 모달
-       ========================================================= -->
+  <!-- 첫 입장 선물 모달 -->
   <div id="welcomeGiftModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/55">
     <div class="wood-panel w-full max-w-md overflow-hidden animate-pop text-center">
       <div class="wood-header py-3 px-4">
@@ -345,12 +319,10 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       [5] 인벤토리 모달 (폴더 탭 + 잠금 해제)
-       ========================================================= -->
+  <!-- 인벤토리 모달 -->
   <div id="inventoryModal" class="hidden fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-5 bg-black/60">
     <div class="wood-panel w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden animate-pop">
-      <div class="wood-header px-4 py-3 flex items-center justify-between gap-2">
+      <div class="wood-header px-4 py-3 flex items-center justify-between gap-2 shrink-0">
         <div class="flex items-center gap-2">
           <span class="text-xl sm:text-2xl">🎒</span>
           <h2 class="text-lg sm:text-xl font-bold">캠핑 아이템 인벤토리</h2>
@@ -367,7 +339,7 @@
         </div>
       </div>
 
-      <div id="inventoryTabs" class="bg-[#ead7b7] border-b-3 border-[#2b180c] px-3 pt-2.5 flex gap-1.5 overflow-x-auto cozy-scroll"></div>
+      <div id="inventoryTabs" class="bg-[#ead7b7] border-b-3 border-[#2b180c] px-3 pt-2.5 h-[52px] min-h-[52px] shrink-0 flex items-end gap-1.5 overflow-x-auto overflow-y-hidden cozy-scroll"></div>
 
       <div class="p-3 sm:p-4 overflow-y-auto cozy-scroll flex-1 bg-[#fdf5e6]">
         <div id="inventoryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
@@ -375,9 +347,7 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       [6] 열쇠 부족 알림 & 게임 유도 팝업 모달
-       ========================================================= -->
+  <!-- 열쇠 부족 알림 모달 -->
   <div id="needKeyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
     <div class="wood-panel w-full max-w-sm overflow-hidden animate-pop text-center">
       <div class="wood-header py-2.5 px-4">
@@ -417,7 +387,6 @@
         </button>
       </div>
 
-      <!-- 게임 선택 탭 바 (6종) -->
       <div class="bg-[#ead7b7] border-b-3 border-[#2b180c] px-2 pt-2 flex gap-1 overflow-x-auto cozy-scroll">
         <button id="mgTab1" onclick="selectMinigame(1)" class="px-2.5 py-2 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fffaf0] text-[#2b180c] font-bold text-xs whitespace-nowrap">
           🪓 1. 장작패기
@@ -563,6 +532,44 @@
     </div>
   </div>
 
+  <!-- =========================================================
+       [11] 캠핑장 저장 & 불러오기 리스트 모달
+       ========================================================= -->
+  <div id="saveLoadModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+    <div class="wood-panel w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden animate-pop">
+      <div class="wood-header py-3 px-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">💾</span>
+          <h3 id="saveLoadModalTitle" class="text-lg font-bold">캠핑장 저장 / 불러오기</h3>
+        </div>
+        <button onclick="closeSaveLoadModal()" class="btn-pixel bg-[#eb4d4b] text-white w-8 h-8 flex items-center justify-center font-bold">
+          ✕
+        </button>
+      </div>
+
+      <!-- 새 이름으로 저장 영역 -->
+      <div id="newSaveSection" class="p-3.5 bg-[#ead7b7] border-b-3 border-[#2b180c] shrink-0 space-y-2">
+        <div class="text-xs font-bold text-[#4a2e1b]">✨ 현재 캠핑장 새 이름으로 저장하기</div>
+        <div class="flex gap-2">
+          <input id="saveSlotNameInput" type="text" maxlength="16" placeholder="예: 아늑한 주말 캠핑"
+            class="w-full px-3 py-2 bg-[#fffaf0] border-2 border-[#2b180c] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f6b93b]" />
+          <button onclick="createNewSaveSlot()" class="btn-pixel btn-green px-3.5 py-2 text-xs sm:text-sm font-bold whitespace-nowrap">
+            💾 새 저장
+          </button>
+        </div>
+      </div>
+
+      <!-- 저장된 캠핑장 리스트 -->
+      <div class="p-3.5 overflow-y-auto cozy-scroll flex-1 space-y-2.5 bg-[#fdf5e6]">
+        <div class="flex items-center justify-between text-xs text-[#74492b] px-1">
+          <span>📋 저장된 캠핑장 목록</span>
+          <span id="saveSlotCountLabel">0개 저장됨</span>
+        </div>
+        <div id="saveSlotListContainer" class="space-y-2.5"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- 토스트 알림 배너 -->
   <div id="toastBanner" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#2b180c] text-[#fff8eb] border-2 border-[#f6b93b] px-4 py-2 rounded-full text-sm font-bold shadow-lg pointer-events-none whitespace-nowrap">
     알림 메시지
@@ -571,10 +578,7 @@
   <script>
     /**
      * =========================================================================
-     * [미니게임 3종 통합 엔진]
-     * - 게임 1: 장작 패기 타이밍 맞추기 (5회 성공 시 열쇠 / 5회 Miss 시 메롱 애니메이션)
-     * - 게임 2: 고양이 쓰다듬기 (머리 1점, 등 2점, 엉덩이 3점 -> 10점 달성 / 꼬리 할퀴기 실패)
-     * - 게임 3: 우중철수 (10초 내 타프 안으로 아이템 전부 이동 / 시간 초과 시 대홍수)
+     * [미니게임 6종 통합 엔진]
      * =========================================================================
      */
     const mgState = {
@@ -1781,64 +1785,18 @@
       return name.replace(/\.png$/i, '');
     }
 
-    // GitHub Pages / 정적 서버에서 ./camping_asset/ 경로를 사용자 개입 없이 자동 로딩
     async function initDefaultAssetCatalog() {
-      let rawManifest = null;
-
-      // 1) 만약 camping_asset/manifest.json 파일을 함께 올려두었다면 자동으로 먼저 읽어옴
-      try {
-        const res = await fetch('./camping_asset/manifest.json');
-        if (res.ok) {
-          rawManifest = await res.json();
-        }
-      } catch (e) {}
-
-      // 2) GitHub Pages 호스팅(*.github.io)일 경우 GitHub Contents API로 camping_asset 하위 폴더/파일 자동 탐색 시도
-      if (!rawManifest && window.location.hostname.endsWith('.github.io')) {
-        try {
-          const owner = window.location.hostname.split('.')[0];
-          const pathSegs = window.location.pathname.split('/').filter(Boolean);
-          const repo = pathSegs[0] || `${owner}.github.io`;
-          const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/camping_asset`;
-          const rootRes = await fetch(apiBase);
-          if (rootRes.ok) {
-            const entries = await rootRes.json();
-            if (Array.isArray(entries)) {
-              const autoMap = {};
-              for (const entry of entries) {
-                if (entry.type === 'dir') {
-                  const subRes = await fetch(entry.url);
-                  if (subRes.ok) {
-                    const files = await subRes.json();
-                    const pngs = files
-                      .filter((f) => f.type === 'file' && /\.png$/i.test(f.name) && !f.name.startsWith('._'))
-                      .map((f) => f.name);
-                    if (pngs.length > 0) autoMap[entry.name] = pngs;
-                  }
-                }
-              }
-              if (Object.keys(autoMap).length > 0) {
-                rawManifest = autoMap;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
-      // 3) 외부 매니페스트가 없으면 상단 CAMPING_ASSET_MANIFEST 설정 사용
-      const sourceObj = rawManifest || CAMPING_ASSET_MANIFEST;
+      const sourceObj = CAMPING_ASSET_MANIFEST;
       const catalog = {};
       let starterAssigned = false;
 
       Object.keys(sourceObj).forEach((folderName) => {
         const list = sourceObj[folderName] || [];
-        catalog[folderName] = list.map((entry, idx) => {
-          const fileName = typeof entry === 'string' ? entry : entry.file;
-          const displayName = typeof entry === 'string' ? stripPngExt(entry) : (entry.name || stripPngExt(fileName));
+        catalog[folderName] = list.map((entry) => {
+          const fileName = entry.file;
+          const displayName = entry.name;
           const itemId = `${folderName}__${fileName}`;
-          const isOldTent = typeof entry === 'object' && entry.unlocked !== undefined
-            ? entry.unlocked
-            : (/낡은|old/i.test(displayName) && !starterAssigned);
+          const isOldTent = entry.unlocked !== undefined ? entry.unlocked : (/낡은|old/i.test(displayName) && !starterAssigned);
 
           if (isOldTent) starterAssigned = true;
 
@@ -1847,74 +1805,54 @@
             name: displayName,
             fileName: fileName,
             folder: folderName,
-            fallbackType: (typeof entry === 'object' && entry.fallbackType) ? entry.fallbackType : 'tent_old',
+            fallbackType: entry.fallbackType || 'tent_old',
             unlocked: Boolean(isOldTent)
           };
         });
       });
 
-      const folderKeys = Object.keys(catalog);
-      if (!starterAssigned && folderKeys.length > 0 && catalog[folderKeys[0]].length > 0) {
-        catalog[folderKeys[0]][0].unlocked = true;
-      }
-
       ASSET_CATALOG = catalog;
-      gameState.activeTab = folderKeys[0] || '텐트';
+      gameState.activeTab = Object.keys(catalog)[0] || '텐트';
 
-      // 모든 폴더/파일 경로(./camping_asset/폴더명/파일명)의 실제 PNG 이미지 자동 프리로드
-      folderKeys.forEach((folder) => {
+      Object.keys(ASSET_CATALOG).forEach((folder) => {
         ASSET_CATALOG[folder].forEach((item) => {
           const img = new Image();
-          img.onload = () => {
-            loadedItemImages[item.id] = img;
-          };
+          img.onload = () => { loadedItemImages[item.id] = img; };
           img.src = `./camping_asset/${encodeURIComponent(folder)}/${encodeURIComponent(item.fileName)}`;
         });
       });
     }
 
-    /**
-     * =========================================================================
-     * 전역 게임 상태 관리
-     * =========================================================================
-     */
     const gameState = {
       started: false,
       playerName: '숲속탐험가',
       selectedChar: 1,
       keys: 0,
       activeTab: '텐트',
-      placingItem: null,        // 현재 배치 중인 아이템 객체
-      selectedPlacedUid: null,  // 클릭하여 선택된 배치 아이템 UID
+      placingItem: null,
+      selectedPlacedUid: null,
       mousePos: { x: 0, y: 0, active: false },
-      placedItems: [],          // 캠핑장에 배치된 아이템 목록 { uid, itemId, x, y, scale, zOrder }
-      sparkles: [],             // 전체 화면 '뾰로롱' 파티클 목록
+      placedItems: [],
+      sparkles: [],
       soundEnabled: true,
       starterGiftShown: false
     };
 
-    // 캐릭터 배회 AI 상태 (캠핑장 내 자유 이동)
     const camperAI = {
       x: 0,
       y: 0,
       vx: 0,
       vy: 0,
-      dir: 'down',            // 'down' | 'right' | 'left' | 'up'
-      state: 'idle',          // 'idle' | 'walk'
+      dir: 'down',
+      state: 'idle',
       timer: 1.5,
       frameIndex: 0,
       frameTimer: 0,
       speed: 68
     };
 
-    // 캠핑장 울타리(이동 가능 영역) 경계 비율 (화면 크기에 비례 계산)
     let campBounds = { left: 100, right: 700, top: 120, bottom: 520 };
 
-    /**
-     * =========================================================================
-     * Web Audio API 사운드 합성 ('뾰로롱~♪', 클릭음, 장작 패기 효과음)
-     * =========================================================================
-     */
     let audioCtx = null;
 
     function ensureAudioCtx() {
@@ -1976,13 +1914,12 @@
       } catch (e) {}
     }
 
-    // 아이템 배치 완료 시 맑고 경쾌한 '뾰로롱~♪' 사운드
     function playPyororongSound() {
       if (!gameState.soundEnabled) return;
       try {
         ensureAudioCtx();
         if (!audioCtx) return;
-        const notes = [587.33, 739.99, 880.00, 1174.66, 1479.98, 1760.00]; // D5 - F#5 - A5 - D6 - F#6 - A6
+        const notes = [587.33, 739.99, 880.00, 1174.66, 1479.98, 1760.00];
         const now = audioCtx.currentTime;
 
         notes.forEach((freq, idx) => {
@@ -2006,11 +1943,6 @@
       } catch (e) {}
     }
 
-    /**
-     * =========================================================================
-     * 스프라이트 시트 로더 & 도트 픽셀 오프스크린 폴백(Fallback) 생성기
-     * =========================================================================
-     */
     const sprites = {
       bg: null,
       chars: { 1: null, 2: null, 3: null }
@@ -2023,7 +1955,6 @@
       const ctx = c.getContext('2d');
       ctx.imageSmoothingEnabled = false;
 
-      // 1) 좌상단 (0,0, 64x64) 잔디 타일
       ctx.fillStyle = '#5da118';
       ctx.fillRect(0, 0, 64, 64);
       ctx.fillStyle = '#488510';
@@ -2033,7 +1964,6 @@
         ctx.fillRect(tx + 4, ty + 1, 3, 2);
       });
 
-      // 2) 나무 3종 (소/중/대 소나무)
       function drawPineTree(ox, oy, w, h) {
         ctx.fillStyle = '#5c330a';
         ctx.fillRect(ox + w / 2 - 4, oy + h - 14, 8, 14);
@@ -2061,13 +1991,11 @@
       drawPineTree(164, 14, 38, 76);
       drawPineTree(206, 4, 46, 90);
 
-      // 3) 덤불
       ctx.fillStyle = '#198712';
       ctx.beginPath();
       ctx.arc(103, 40, 18, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4) 클로버 & 빨간 버섯
       ctx.fillStyle = '#2d9e19';
       for (let i = 0; i < 12; i++) {
         ctx.fillRect(4 + (i % 3) * 10, 68 + Math.floor(i / 3) * 14, 5, 5);
@@ -2084,7 +2012,6 @@
         ctx.fillRect(mx + 1, my - 3, 2, 2);
       });
 
-      // 5) 캠핑 안내 표지판
       ctx.fillStyle = '#6b421c';
       ctx.fillRect(70, 118, 4, 6);
       ctx.fillRect(86, 118, 4, 6);
@@ -2100,7 +2027,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // 6) 통나무 울타리 프레임
       ctx.fillStyle = '#8c5319';
       ctx.strokeStyle = '#261404';
       ctx.lineWidth = 1.5;
@@ -2115,7 +2041,6 @@
         ctx.strokeRect(89, 134 + i * 28, 5, 24);
       }
 
-      // 7) 둥근 모서리 모래/흙 캠핑 구역 타일
       ctx.fillStyle = '#a88454';
       ctx.beginPath();
       ctx.roundRect(99, 131, 88, 88, 8);
@@ -2229,11 +2154,6 @@
       });
     }
 
-    /**
-     * =========================================================================
-     * 아이템 렌더러 (실제 PNG 이미지 원본 도트 픽셀 비율 100% 유지)
-     * =========================================================================
-     */
     function drawItemVisual(ctx, itemOrId, cx, cy, scale = 1, alpha = 1) {
       const itemObj = typeof itemOrId === 'string' ? findItemById(itemOrId) : itemOrId;
       const itemId = itemObj ? itemObj.id : itemOrId;
@@ -2787,11 +2707,6 @@
       if (starterTent) startPlacementMode(starterTent);
     }
 
-    /**
-     * =========================================================================
-     * 인벤토리 모달 (폴더명 탭 + 잠금/열쇠 해제 + 배치 전환)
-     * =========================================================================
-     */
     function updateKeyUI() {
       document.getElementById('invKeyCount').textContent = gameState.keys;
       const badge = document.getElementById('hudKeyBadge');
@@ -2828,12 +2743,12 @@
 
         const btn = document.createElement('button');
         btn.className = isActive
-          ? 'px-3.5 py-2 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fdf5e6] text-[#2b180c] font-bold text-xs sm:text-sm whitespace-nowrap flex items-center gap-1.5 shadow-sm'
-          : 'px-3.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] hover:bg-[#e8d3b0] text-xs sm:text-sm whitespace-nowrap flex items-center gap-1.5';
+          ? 'h-[38px] shrink-0 px-3.5 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fdf5e6] text-[#2b180c] font-bold text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5 shadow-sm'
+          : 'h-[38px] shrink-0 px-3.5 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] hover:bg-[#e8d3b0] text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5';
 
         btn.innerHTML = `
           <span>📁 ${folderName}</span>
-          <span class="text-[11px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-[#f6b93b] text-[#2b180c]' : 'bg-[#cbb28c] text-[#4a2e1b]'}">
+          <span class="text-[11px] leading-none px-1.5 py-0.5 rounded-full ${isActive ? 'bg-[#f6b93b] text-[#2b180c]' : 'bg-[#cbb28c] text-[#4a2e1b]'}">
             ${unlockedCount}/${totalCount}
           </span>
         `;
@@ -2928,11 +2843,6 @@
       openMinigameModal();
     }
 
-    /**
-     * =========================================================================
-     * 미니게임 & 친구 & 관리 모달 제어
-     * =========================================================================
-     */
     function openMinigameModal() {
       playClickSound();
       startCustomMinigame();
@@ -3010,11 +2920,6 @@
       }, 2600);
     }
 
-    /**
-     * =========================================================================
-     * 아이템 배치 모드 & 전체 화면 '반짝이는 뾰로롱' 파티클 시스템
-     * =========================================================================
-     */
     function startPlacementMode(item) {
       gameState.placingItem = item;
       document.getElementById('placingItemName').textContent = item.name;
@@ -3063,6 +2968,256 @@
       }
     }
 
+    const CAMP_SAVE_STORAGE_KEY = 'forest_camp_saved_slots_v2';
+    const LEGACY_SAVE_KEY = 'forest_camp_saved_state_v1';
+
+    function getAllSaveSlots() {
+      try {
+        let slots = [];
+        const raw = localStorage.getItem(CAMP_SAVE_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) slots = parsed;
+        }
+        // 이전 버전 단일 저장 데이터가 있다면 첫 슬롯으로 자동 마이그레이션
+        const legacyRaw = localStorage.getItem(LEGACY_SAVE_KEY);
+        if (legacyRaw) {
+          const legacyData = JSON.parse(legacyRaw);
+          slots.unshift({
+            id: 'legacy_' + Date.now(),
+            slotName: `${legacyData.playerName || '기본'} 캠핑장 (이전 저장)`,
+            ...legacyData
+          });
+          localStorage.setItem(CAMP_SAVE_STORAGE_KEY, JSON.stringify(slots));
+          localStorage.removeItem(LEGACY_SAVE_KEY);
+        }
+        return slots;
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function setAllSaveSlots(slots) {
+      localStorage.setItem(CAMP_SAVE_STORAGE_KEY, JSON.stringify(slots));
+    }
+
+    function buildCurrentCampSnapshot(slotName) {
+      const campW = Math.max(1, campBounds.right - campBounds.left);
+      const campH = Math.max(1, campBounds.bottom - campBounds.top);
+
+      const unlockedIds = [];
+      Object.keys(ASSET_CATALOG).forEach((folder) => {
+        ASSET_CATALOG[folder].forEach((it) => {
+          if (it.unlocked) unlockedIds.push(it.id);
+        });
+      });
+
+      return {
+        id: 'slot_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        slotName: slotName,
+        savedAt: new Date().toLocaleString('ko-KR', {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        }),
+        playerName: gameState.playerName,
+        selectedChar: gameState.selectedChar,
+        keys: gameState.keys,
+        unlockedIds: unlockedIds,
+        placedItems: gameState.placedItems.map((p) => ({
+          itemId: p.itemId,
+          rx: (p.x - campBounds.left) / campW,
+          ry: (p.y - campBounds.top) / campH,
+          scale: p.scale || 1.05,
+          zOrder: p.zOrder || 0
+        }))
+      };
+    }
+
+    function openSaveLoadModal(mode = 'save') {
+      playClickSound();
+      const titleEl = document.getElementById('saveLoadModalTitle');
+      const newSaveSec = document.getElementById('newSaveSection');
+      const nameInput = document.getElementById('saveSlotNameInput');
+
+      if (mode === 'save') {
+        titleEl.textContent = '💾 캠핑장 저장하기';
+        newSaveSec.classList.remove('hidden');
+        const slots = getAllSaveSlots();
+        nameInput.value = `${gameState.playerName}의 캠프 #${slots.length + 1}`;
+      } else {
+        titleEl.textContent = '📂 저장된 캠핑장 불러오기';
+        newSaveSec.classList.add('hidden');
+      }
+
+      renderSaveSlotList(mode);
+      document.getElementById('saveLoadModal').classList.remove('hidden');
+    }
+
+    function closeSaveLoadModal() {
+      playClickSound();
+      document.getElementById('saveLoadModal').classList.add('hidden');
+    }
+
+    function renderSaveSlotList(mode) {
+      const container = document.getElementById('saveSlotListContainer');
+      const countLabel = document.getElementById('saveSlotCountLabel');
+      const slots = getAllSaveSlots();
+
+      countLabel.textContent = `${slots.length}개 저장됨`;
+      container.innerHTML = '';
+
+      if (slots.length === 0) {
+        container.innerHTML = `
+          <div class="bg-[#fffaf0] border-2 border-dashed border-[#cbb28c] rounded-2xl p-6 text-center text-sm text-[#74492b]">
+            아직 저장된 캠핑장이 없어요!<br/>
+            <span class="text-xs">위 입력창에 이름을 적고 <strong>[💾 새 저장]</strong>을 눌러보세요.</span>
+          </div>
+        `;
+        return;
+      }
+
+      slots.forEach((slot) => {
+        const itemCount = Array.isArray(slot.placedItems) ? slot.placedItems.length : 0;
+        const card = document.createElement('div');
+        card.className = 'bg-[#fffaf0] border-2 border-[#2b180c] rounded-xl p-3 flex items-center justify-between gap-2 shadow-xs';
+
+        card.innerHTML = `
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-sm sm:text-base text-[#2b180c] truncate">🏕️ ${slot.slotName}</div>
+            <div class="text-[11px] text-[#74492b] mt-0.5">
+              배치 <strong>${itemCount}개</strong> · 🔑 ${slot.keys || 0}개 · ${slot.savedAt || ''}
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${mode === 'save' ? `
+              <button onclick="overwriteSaveSlot('${slot.id}')" class="btn-pixel btn-amber px-2.5 py-1.5 text-xs font-bold">
+                덮어쓰기
+              </button>
+            ` : `
+              <button onclick="applySaveSlot('${slot.id}')" class="btn-pixel btn-sky px-3 py-1.5 text-xs font-bold">
+                불러오기
+              </button>
+            `}
+            <button onclick="deleteSaveSlot('${slot.id}', '${mode}')" title="삭제" class="btn-pixel bg-[#eb4d4b] text-white px-2 py-1.5 text-xs font-bold">
+              🗑️
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function createNewSaveSlot() {
+      try {
+        const input = document.getElementById('saveSlotNameInput');
+        const slots = getAllSaveSlots();
+        const customName = input.value.trim() || `${gameState.playerName}의 캠프 #${slots.length + 1}`;
+        const snapshot = buildCurrentCampSnapshot(customName);
+
+        slots.unshift(snapshot);
+        setAllSaveSlots(slots);
+
+        playPyororongSound();
+        renderSaveSlotList('save');
+        input.value = `${gameState.playerName}의 캠프 #${slots.length + 1}`;
+        showToast(`💾 [${customName}] 슬롯에 새로 저장되었습니다!`);
+      } catch (e) {
+        showToast('⚠️ 저장 중 오류가 발생했습니다.');
+      }
+    }
+
+    function overwriteSaveSlot(slotId) {
+      try {
+        const slots = getAllSaveSlots();
+        const idx = slots.findIndex((s) => s.id === slotId);
+        if (idx === -1) return;
+
+        const existingName = slots[idx].slotName;
+        const snapshot = buildCurrentCampSnapshot(existingName);
+        snapshot.id = slotId;
+        slots[idx] = snapshot;
+        setAllSaveSlots(slots);
+
+        playPyororongSound();
+        renderSaveSlotList('save');
+        showToast(`💾 [${existingName}] 슬롯에 덮어썼습니다!`);
+      } catch (e) {
+        showToast('⚠️ 덮어쓰기 중 오류가 발생했습니다.');
+      }
+    }
+
+    function deleteSaveSlot(slotId, mode) {
+      try {
+        const slots = getAllSaveSlots().filter((s) => s.id !== slotId);
+        setAllSaveSlots(slots);
+        playClickSound();
+        renderSaveSlotList(mode);
+        showToast('🗑️ 선택한 저장 슬롯을 삭제했습니다.');
+      } catch (e) {}
+    }
+
+    function applySaveSlot(slotId) {
+      try {
+        const slots = getAllSaveSlots();
+        const data = slots.find((s) => s.id === slotId);
+        if (!data) {
+          showToast('⚠️ 해당 저장 데이터를 찾을 수 없습니다.');
+          return;
+        }
+
+        const campW = Math.max(1, campBounds.right - campBounds.left);
+        const campH = Math.max(1, campBounds.bottom - campBounds.top);
+
+        if (Array.isArray(data.unlockedIds)) {
+          const unlockedSet = new Set(data.unlockedIds);
+          Object.keys(ASSET_CATALOG).forEach((folder) => {
+            ASSET_CATALOG[folder].forEach((it) => {
+              if (unlockedSet.has(it.id)) it.unlocked = true;
+            });
+          });
+        }
+
+        if (typeof data.keys === 'number') {
+          gameState.keys = data.keys;
+          updateKeyUI();
+        }
+
+        if (data.playerName) {
+          gameState.playerName = data.playerName;
+          document.getElementById('hudCampTitle').textContent = `${gameState.playerName}의 캠핑장`;
+        }
+
+        if (data.selectedChar) {
+          gameState.selectedChar = data.selectedChar;
+        }
+
+        if (Array.isArray(data.placedItems)) {
+          gameState.placedItems = data.placedItems
+            .filter((p) => findItemById(p.itemId))
+            .map((p, idx) => {
+              const rawX = campBounds.left + (typeof p.rx === 'number' ? p.rx : 0.5) * campW;
+              const rawY = campBounds.top + (typeof p.ry === 'number' ? p.ry : 0.5) * campH;
+              return {
+                uid: Date.now() + idx + Math.random(),
+                itemId: p.itemId,
+                x: Math.max(campBounds.left + 24, Math.min(campBounds.right - 24, rawX)),
+                y: Math.max(campBounds.top + 20, Math.min(campBounds.bottom - 16, rawY)),
+                scale: p.scale || 1.05,
+                zOrder: p.zOrder || 0
+              };
+            });
+        }
+
+        cancelPlacement();
+        updatePlacedCount();
+        document.getElementById('saveLoadModal').classList.add('hidden');
+        playPyororongSound();
+        triggerFullScreenSparkles(canvas.width / 2, canvas.height / 2);
+        showToast(`📂 [${data.slotName}] 배치를 불러왔습니다!`);
+      } catch (e) {
+        showToast('⚠️ 불러오기 중 오류가 발생했습니다.');
+      }
+    }
+
     function updateAndDrawSparkles(ctx, dt) {
       for (let i = gameState.sparkles.length - 1; i >= 0; i--) {
         const p = gameState.sparkles[i];
@@ -3106,11 +3261,6 @@
       }
     }
 
-    /**
-     * =========================================================================
-     * 메인 Canvas 렌더링 & 캐릭터 배회 AI 업데이트
-     * =========================================================================
-     */
     const canvas = document.getElementById('campCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -3160,6 +3310,36 @@
       gameState.mousePos = { x: pos.x, y: pos.y, active: true };
     }, { passive: true });
 
+    // 아이템의 실제 이미지 크기(또는 기본 아이콘 바운딩 박스)를 계산해 어디든 터치 가능하도록 판정
+    function getPlacedItemHitBox(pItem) {
+      const scale = pItem.scale || 1.05;
+      const realImg = loadedItemImages[pItem.itemId];
+      const touchPadding = 12; // 굵은 손가락 터치를 위한 여유 마진
+
+      if (realImg && realImg.complete && realImg.naturalWidth > 0) {
+        const baseFactor = 1.65;
+        const dw = realImg.naturalWidth * baseFactor * scale;
+        const dh = realImg.naturalHeight * baseFactor * scale;
+        return {
+          left: pItem.x - dw / 2 - touchPadding,
+          right: pItem.x + dw / 2 + touchPadding,
+          top: pItem.y - dh * 0.65 - touchPadding,
+          bottom: pItem.y + dh * 0.35 + touchPadding
+        };
+      }
+
+      // 폴백 도트 그래픽용 바운딩 박스 (가로 76px, 세로 64px 기준 + 여유 마진)
+      const halfW = 38 * scale + touchPadding;
+      const topH = 36 * scale + touchPadding;
+      const botH = 26 * scale + touchPadding;
+      return {
+        left: pItem.x - halfW,
+        right: pItem.x + halfW,
+        top: pItem.y - topH,
+        bottom: pItem.y + botH
+      };
+    }
+
     canvas.addEventListener('click', (e) => {
       if (!gameState.started) return;
       const pos = getPointerPos(e);
@@ -3179,7 +3359,6 @@
         });
 
         updatePlacedCount();
-
         playPyororongSound();
         triggerFullScreenSparkles(placeX, placeY);
 
@@ -3190,9 +3369,17 @@
         return;
       }
 
-      for (let i = gameState.placedItems.length - 1; i >= 0; i--) {
-        const p = gameState.placedItems[i];
-        if (Math.abs(pos.x - p.x) <= 34 && Math.abs(pos.y - p.y) <= 34) {
+      // 화면 위에 그려지는 순서(앞쪽에 있는 아이템 우선)대로 터치 영역 검사
+      const sortedForHit = [...gameState.placedItems].sort((a, b) => {
+        const za = a.zOrder || 0;
+        const zb = b.zOrder || 0;
+        if (za !== zb) return zb - za;
+        return b.y - a.y;
+      });
+
+      for (const p of sortedForHit) {
+        const box = getPlacedItemHitBox(p);
+        if (pos.x >= box.left && pos.x <= box.right && pos.y >= box.top && pos.y <= box.bottom) {
           playClickSound();
           gameState.selectedPlacedUid = p.uid;
           const meta = findItemById(p.itemId);

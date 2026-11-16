@@ -1,0 +1,3591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>포레스트 캠프 - 나만의 도트 캠핑장 꾸미기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Galmuri11:wght@400;700&family=Jua&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --wood-dark: #4a2e1b;
+      --wood-mid: #74492b;
+      --wood-light: #a66e44;
+      --cream-bg: #fdf5e6;
+      --cream-card: #fffaf0;
+      --border-ink: #2b180c;
+      --leaf-green: #4e8c36;
+      --leaf-dark: #356323;
+      --gold-accent: #f6b93b;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #2c4a1e;
+      font-family: 'Jua', sans-serif;
+      color: var(--border-ink);
+    }
+
+    .pixel-font {
+      font-family: 'Galmuri11', 'Jua', monospace;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* 코지 우드 픽셀 프레임 스타일 */
+    .wood-panel {
+      background: var(--cream-bg);
+      border: 4px solid var(--border-ink);
+      border-radius: 16px;
+      box-shadow:
+        inset 0 0 0 4px #e9d5b3,
+        0 8px 0 rgba(27, 14, 6, 0.45);
+    }
+
+    .wood-header {
+      background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-mid) 100%);
+      border-bottom: 4px solid var(--border-ink);
+      color: #fff8eb;
+      text-shadow: 2px 2px 0 var(--border-ink);
+    }
+
+    .btn-pixel {
+      position: relative;
+      border: 3px solid var(--border-ink);
+      border-radius: 12px;
+      box-shadow: 0 4px 0 var(--border-ink);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+      cursor: pointer;
+    }
+
+    .btn-pixel:hover:not(:disabled) {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+      box-shadow: 0 5px 0 var(--border-ink);
+    }
+
+    .btn-pixel:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--border-ink);
+    }
+
+    .btn-pixel:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-green {
+      background: linear-gradient(180deg, #6ab04c 0%, #4e8c36 100%);
+      color: #fff;
+      text-shadow: 1.5px 1.5px 0 var(--border-ink);
+    }
+
+    .btn-amber {
+      background: linear-gradient(180deg, #f9ca24 0%, #f0932b 100%);
+      color: var(--border-ink);
+    }
+
+    .btn-wood {
+      background: linear-gradient(180deg, #b87d4b 0%, #8c5830 100%);
+      color: #fff8eb;
+      text-shadow: 1.5px 1.5px 0 var(--border-ink);
+    }
+
+    .btn-sky {
+      background: linear-gradient(180deg, #48dbfb 0%, #0abde3 100%);
+      color: var(--border-ink);
+    }
+
+    .char-card {
+      background: var(--cream-card);
+      border: 3px solid #cbb28c;
+      border-radius: 14px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .char-card.selected {
+      background: #fff1cc;
+      border-color: var(--border-ink);
+      box-shadow: 0 0 0 3px #f6b93b, 0 5px 0 var(--border-ink);
+      transform: translateY(-3px);
+    }
+
+    /* 커스텀 스크롤바 */
+    .cozy-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .cozy-scroll::-webkit-scrollbar-track {
+      background: #ead7b7;
+      border-radius: 8px;
+    }
+    .cozy-scroll::-webkit-scrollbar-thumb {
+      background: #9c663d;
+      border-radius: 8px;
+      border: 2px solid #ead7b7;
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-float {
+      animation: floatSlow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      70% { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden">
+
+  <!-- =========================================================
+       [1] 메인 캠핑장 전체 화면 Canvas
+       ========================================================= -->
+  <canvas id="campCanvas" class="block w-full h-full"></canvas>
+
+  <!-- =========================================================
+       [2] 캠핑장 입장 후 상단 HUD (캠핑장 간판 + 우측 상단 아이콘)
+       ========================================================= -->
+  <div id="hudLayer" class="hidden fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-3 sm:p-5">
+    <!-- 상단 바 -->
+    <div class="flex items-start justify-between gap-2 w-full">
+      <!-- 좌측 상단: 캠핑장 간판 & 사운드 토글 -->
+      <div class="pointer-events-auto flex items-center gap-2">
+        <div class="wood-panel px-3.5 py-2 flex items-center gap-2.5">
+          <span class="text-xl sm:text-2xl">🏕️</span>
+          <div>
+            <div class="text-[11px] sm:text-xs text-[#8c5830] leading-none">MY COZY CAMP</div>
+            <div id="hudCampTitle" class="text-base sm:text-lg font-bold text-[#2b180c] leading-tight">달빛 숲 캠핑장</div>
+          </div>
+        </div>
+        <button id="btnMuteToggle" onclick="toggleAudio()" title="효과음 켜기/끄기"
+          class="btn-pixel btn-wood w-11 h-11 flex items-center justify-center text-lg">
+          🔊
+        </button>
+      </div>
+
+      <!-- 우측 상단: 인벤토리 / 게임 / 친구 아이콘 메뉴 -->
+      <div class="pointer-events-auto flex flex-wrap justify-end items-center gap-1.5 sm:gap-2.5">
+        <!-- 인벤토리 버튼 -->
+        <button onclick="openInventoryModal()" class="btn-pixel btn-amber px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex flex-col items-center justify-center relative min-w-[58px] sm:min-w-[68px]">
+          <span class="text-lg sm:text-2xl leading-none">🎒</span>
+          <span class="text-[11px] sm:text-xs font-bold mt-1">인벤토리</span>
+          <!-- 보유 열쇠 개수 배지 -->
+          <span id="hudKeyBadge" class="hidden absolute -top-2.5 -right-2.5 bg-[#e55039] text-white border-2 border-[#2b180c] rounded-full px-2 py-0.5 text-xs font-bold shadow">
+            🔑 0
+          </span>
+        </button>
+
+        <!-- 친구 버튼 -->
+        <button onclick="openFriendsModal()" class="btn-pixel btn-wood px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px]">
+          <span class="text-lg sm:text-2xl leading-none">👥</span>
+          <span class="text-[11px] sm:text-xs font-bold mt-1">친구</span>
+        </button>
+
+        <!-- 게임 버튼 -->
+        <button id="hudGameBtn" onclick="openMinigameModal()" class="btn-pixel btn-green px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px]">
+          <span class="text-lg sm:text-2xl leading-none">🎮</span>
+          <span class="text-[11px] sm:text-xs font-bold mt-1">게임</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 하단 중앙: 배치 모드 가이드 바 / 빠른 관리 버튼 -->
+    <div class="flex flex-col items-center gap-2 w-full">
+      <!-- 배치 모드 활성화 시 안내 배너 -->
+      <div id="placementBanner" class="hidden pointer-events-auto wood-panel px-4 py-2.5 flex flex-wrap items-center justify-center gap-3 animate-pop">
+        <div class="flex items-center gap-2">
+          <span class="text-xl animate-bounce">✨</span>
+          <span class="text-sm sm:text-base font-bold text-[#2b180c]">
+            [<span id="placingItemName" class="text-[#d35400]">낡은 텐트</span>] 배치 중 — 원하는 바닥을 터치/클릭하세요!
+          </span>
+        </div>
+        <button id="btnCancelPlacement" onclick="cancelPlacement()" class="btn-pixel bg-[#eb4d4b] text-white px-3 py-1 text-xs sm:text-sm">
+          배치 취소
+        </button>
+      </div>
+
+      <!-- 일반 모드 하단 툴바 (배치된 아이템 관리) -->
+      <div id="bottomToolbar" class="pointer-events-auto flex flex-wrap items-center justify-center gap-2 bg-[#2b180c]/80 backdrop-blur-sm text-[#fff8eb] px-4 py-1.5 rounded-full border-2 border-[#a66e44] text-xs sm:text-sm">
+        <span>🌲 배치: <strong id="placedCountText" class="text-[#f6b93b]">0</strong>개</span>
+        <span class="opacity-40">|</span>
+        <span class="text-[#ffeaa7]">💡 배치된 아이템 클릭 시 이동/회수</span>
+        <span class="opacity-40">|</span>
+        <button onclick="undoLastPlaced()" class="hover:text-[#f6b93b] underline cursor-pointer">마지막 회수</button>
+        <span class="opacity-40">|</span>
+        <button onclick="openResetConfirm()" class="hover:text-[#ff7979] underline cursor-pointer">전체 비우기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [3] 입장 화면 (타이틀 & 캐릭터 선택 & 로컬 에셋 연결)
+       ========================================================= -->
+  <div id="entryScreen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#1f3615]/75 backdrop-blur-xs overflow-y-auto">
+    <div class="wood-panel w-full max-w-lg overflow-hidden animate-pop my-auto">
+      <!-- 헤더 -->
+      <div class="wood-header py-3.5 px-5 text-center">
+        <div class="inline-block bg-[#2b180c]/40 px-3 py-0.5 rounded-full text-xs tracking-wider mb-1">
+          FOREST CAMP • COZY PIXEL EDITION
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">🏕️ 나만의 숲속 캠핑장</h1>
+      </div>
+
+      <!-- 본문 -->
+      <div class="p-4 sm:p-5 space-y-5">
+        <!-- 캠핑장 이름 / 닉네임 입력 -->
+        <div>
+          <label for="playerNameInput" class="block text-sm sm:text-base font-bold mb-1.5 text-[#4a2e1b]">
+            1. 캠퍼 이름 (닉네임)을 입력하세요
+          </label>
+          <div class="flex gap-2">
+            <input id="playerNameInput" type="text" maxlength="12" placeholder="예: 숲속탐험가"
+              class="w-full px-3.5 py-2.5 bg-[#fffaf0] border-3 border-[#2b180c] rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-[#f6b93b]/50" />
+            <button onclick="randomizeNickname()" title="랜덤 이름 추천"
+              class="btn-pixel btn-wood px-3.5 py-2.5 text-sm whitespace-nowrap">
+              🎲 추천
+            </button>
+          </div>
+        </div>
+
+        <!-- 캐릭터 1, 2, 3 선택 -->
+        <div>
+          <label class="block text-sm sm:text-base font-bold mb-2 text-[#4a2e1b]">
+            2. 함께 떠날 캠퍼 캐릭터를 선택하세요
+          </label>
+          <div class="grid grid-cols-3 gap-2.5">
+            <!-- 캐릭터 1 -->
+            <div id="charCard1" onclick="selectCharacter(1)" class="char-card selected p-2.5 flex flex-col items-center">
+              <div class="w-16 h-18 bg-[#e8f3dc] rounded-xl border-2 border-[#b5cfa0] flex items-center justify-center overflow-hidden mb-1.5">
+                <canvas id="previewChar1" width="64" height="72"></canvas>
+              </div>
+              <span class="text-sm font-bold">캐릭터 1</span>
+              <span class="text-[10px] text-[#74492b]">주황 조끼 레인저</span>
+            </div>
+
+            <!-- 캐릭터 2 -->
+            <div id="charCard2" onclick="selectCharacter(2)" class="char-card p-2.5 flex flex-col items-center">
+              <div class="w-16 h-18 bg-[#e8f3dc] rounded-xl border-2 border-[#b5cfa0] flex items-center justify-center overflow-hidden mb-1.5">
+                <canvas id="previewChar2" width="64" height="72"></canvas>
+              </div>
+              <span class="text-sm font-bold">캐릭터 2</span>
+              <span class="text-[10px] text-[#74492b]">햇살 코랄 백패커</span>
+            </div>
+
+            <!-- 캐릭터 3 -->
+            <div id="charCard3" onclick="selectCharacter(3)" class="char-card p-2.5 flex flex-col items-center">
+              <div class="w-16 h-18 bg-[#e8f3dc] rounded-xl border-2 border-[#b5cfa0] flex items-center justify-center overflow-hidden mb-1.5">
+                <canvas id="previewChar3" width="64" height="72"></canvas>
+              </div>
+              <span class="text-sm font-bold">캐릭터 3</span>
+              <span class="text-[10px] text-[#74492b]">네이비 별빛 가이드</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 입장 버튼 -->
+        <button onclick="enterCampsite()" class="btn-pixel btn-green w-full py-3.5 text-lg sm:text-xl font-bold flex items-center justify-center gap-2">
+          <span>🌲</span>
+          <span>캠핑장 입장하기</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [4] 첫 입장 튜토리얼: 기본 낡은 텐트 선물 모달
+       ========================================================= -->
+  <div id="welcomeGiftModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/55">
+    <div class="wood-panel w-full max-w-md overflow-hidden animate-pop text-center">
+      <div class="wood-header py-3 px-4">
+        <h2 class="text-xl font-bold">🎁 캠핑장 개장 축하 선물!</h2>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-base sm:text-lg leading-relaxed">
+          <strong id="welcomeUserName" class="text-[#c0392b]">캠퍼</strong>님, 숲속 캠핑장에 오신 걸 환영해요!<br/>
+          첫 캠핑을 시작할 수 있도록 기본 텐트를 선물로 드립니다.
+        </p>
+
+        <div class="mx-auto w-36 h-36 bg-[#e8f3dc] border-3 border-[#2b180c] rounded-2xl flex flex-col items-center justify-center p-2 shadow-inner animate-float">
+          <canvas id="giftItemPreview" width="88" height="88"></canvas>
+          <span id="giftItemLabel" class="text-xs font-bold text-[#356323] mt-1 truncate max-w-[125px]">낡은 텐트 (기본)</span>
+        </div>
+
+        <p class="text-xs sm:text-sm text-[#74492b]">
+          ※ 다른 멋진 캠핑 아이템들은 우측 상단 <strong>[게임]</strong>을 플레이해 열쇠를 모아 잠금 해제할 수 있어요!
+        </p>
+
+        <button onclick="acceptStarterGift()" class="btn-pixel btn-amber w-full py-3 text-base sm:text-lg font-bold">
+          ✨ 선물 받고 원하는 곳에 배치하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [5] 인벤토리 모달 (폴더 탭 + 잠금 해제)
+       ========================================================= -->
+  <div id="inventoryModal" class="hidden fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-5 bg-black/60">
+    <div class="wood-panel w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden animate-pop">
+      <div class="wood-header px-4 py-3 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl sm:text-2xl">🎒</span>
+          <h2 class="text-lg sm:text-xl font-bold">캠핑 아이템 인벤토리</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="bg-[#2b180c]/75 border-2 border-[#f6b93b] px-3 py-1 rounded-full flex items-center gap-1.5 text-sm sm:text-base">
+            <span>🔑</span>
+            <span class="text-[#ffeaa7]">열쇠:</span>
+            <strong id="invKeyCount" class="text-[#f6b93b]">0</strong>개
+          </div>
+          <button onclick="closeInventoryModal()" class="btn-pixel bg-[#eb4d4b] text-white w-8 h-8 flex items-center justify-center font-bold">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div id="inventoryTabs" class="bg-[#ead7b7] border-b-3 border-[#2b180c] px-3 pt-2.5 flex gap-1.5 overflow-x-auto cozy-scroll"></div>
+
+      <div class="p-3 sm:p-4 overflow-y-auto cozy-scroll flex-1 bg-[#fdf5e6]">
+        <div id="inventoryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [6] 열쇠 부족 알림 & 게임 유도 팝업 모달
+       ========================================================= -->
+  <div id="needKeyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+    <div class="wood-panel w-full max-w-sm overflow-hidden animate-pop text-center">
+      <div class="wood-header py-2.5 px-4">
+        <h3 class="text-lg font-bold">🔒 잠긴 캠핑 아이템</h3>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="text-4xl">🔑</div>
+        <p class="text-base leading-relaxed">
+          <strong id="lockedItemTitle" class="text-[#d35400]">아이템</strong>을(를) 해제하려면<br/>
+          <strong>아이템 열쇠</strong>가 필요해요!<br/>
+          <span class="text-sm text-[#74492b]">아이템을 해제하려면 게임을 플레이하세요!</span>
+        </p>
+        <div class="flex gap-2.5">
+          <button onclick="closeNeedKeyModal()" class="btn-pixel btn-wood flex-1 py-2.5 text-sm font-bold">
+            닫기
+          </button>
+          <button onclick="goToGameFromAlert()" class="btn-pixel btn-green flex-1 py-2.5 text-sm font-bold">
+            🎮 게임 하러가기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [7] 미니게임 모달 (게임 1~6 통합)
+       ========================================================= -->
+  <div id="minigameModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-black/65">
+    <div class="wood-panel w-full max-w-lg overflow-hidden animate-pop">
+      <div class="wood-header px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎮</span>
+          <h2 id="minigameModalTitle" class="text-lg sm:text-xl font-bold">캠핑 미니게임 선택</h2>
+        </div>
+        <button onclick="closeMinigameModal()" class="btn-pixel bg-[#eb4d4b] text-white w-8 h-8 flex items-center justify-center font-bold">
+          ✕
+        </button>
+      </div>
+
+      <!-- 게임 선택 탭 바 (6종) -->
+      <div class="bg-[#ead7b7] border-b-3 border-[#2b180c] px-2 pt-2 flex gap-1 overflow-x-auto cozy-scroll">
+        <button id="mgTab1" onclick="selectMinigame(1)" class="px-2.5 py-2 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fffaf0] text-[#2b180c] font-bold text-xs whitespace-nowrap">
+          🪓 1. 장작패기
+        </button>
+        <button id="mgTab2" onclick="selectMinigame(2)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🐱 2. 고양이
+        </button>
+        <button id="mgTab3" onclick="selectMinigame(3)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          ⛈️ 3. 우중철수
+        </button>
+        <button id="mgTab4" onclick="selectMinigame(4)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🍖 4. 고기찾기
+        </button>
+        <button id="mgTab5" onclick="selectMinigame(5)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🔥 5. 불닭복불복
+        </button>
+        <button id="mgTab6" onclick="selectMinigame(6)" class="px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap">
+          🌰 6. 밤따기
+        </button>
+      </div>
+
+      <div id="minigameContainer" class="p-4 sm:p-5 text-center space-y-3 bg-[#fffaf0]">
+        <div class="relative mx-auto w-full max-w-[420px] aspect-[4/3] bg-[#e8f3dc] border-3 border-[#2b180c] rounded-2xl overflow-hidden shadow-inner">
+          <canvas id="minigameCanvas" width="420" height="315" class="w-full h-full block cursor-pointer touch-none"></canvas>
+        </div>
+
+        <p id="minigameStatusText" class="text-sm sm:text-base font-bold text-[#2b180c] min-h-[2.8rem] flex items-center justify-center">
+          도끼가 중앙 장작 위에 올 때 터치하세요! (5회 성공 시 열쇠 획득)
+        </p>
+
+        <div id="minigameActionArea" class="flex gap-2 justify-center">
+          <button onclick="restartCurrentMinigame()" class="btn-pixel btn-wood px-4 py-2 text-xs sm:text-sm font-bold">
+            🔄 다시 시작
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [8] 친구 캠핑장 방문 & 방명록 모달
+       ========================================================= -->
+  <div id="friendsModal" class="hidden fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/55">
+    <div class="wood-panel w-full max-w-lg overflow-hidden animate-pop">
+      <div class="wood-header px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">👥</span>
+          <h2 class="text-lg sm:text-xl font-bold">숲속 이웃 캠퍼 친구들</h2>
+        </div>
+        <button onclick="closeFriendsModal()" class="btn-pixel bg-[#eb4d4b] text-white w-8 h-8 flex items-center justify-center font-bold">
+          ✕
+        </button>
+      </div>
+      <div class="p-4 sm:p-5 space-y-3 max-h-[75vh] overflow-y-auto cozy-scroll">
+        <p class="text-xs sm:text-sm text-[#74492b]">이웃 캠퍼에게 응원의 하트를 보내거나 캠핑장 아이디어를 구경해보세요!</p>
+
+        <!-- 친구 카드 1 -->
+        <div class="bg-[#fffaf0] border-2 border-[#cbb28c] rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-[#dff9fb] border-2 border-[#2b180c] flex items-center justify-center text-2xl">🦊</div>
+            <div>
+              <div class="font-bold text-base">여우별 캠퍼 <span class="text-xs text-[#4e8c36]">● 접속중</span></div>
+              <div class="text-xs text-[#74492b]">"모닥불 앞에서 마시멜로 굽는 중!"</div>
+            </div>
+          </div>
+          <button onclick="sendFriendHeart(this, '여우별 캠퍼')" class="btn-pixel btn-amber px-3 py-1.5 text-xs sm:text-sm font-bold">
+            ❤️ 좋아요
+          </button>
+        </div>
+
+        <!-- 친구 카드 2 -->
+        <div class="bg-[#fffaf0] border-2 border-[#cbb28c] rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-[#ffcccc] border-2 border-[#2b180c] flex items-center justify-center text-2xl">🐻</div>
+            <div>
+              <div class="font-bold text-base">꿀단지 곰돌이 <span class="text-xs text-gray-500">● 10분 전</span></div>
+              <div class="text-xs text-[#74492b]">"해먹과 빈티지 랜턴 조합 최고예요~"</div>
+            </div>
+          </div>
+          <button onclick="sendFriendHeart(this, '꿀단지 곰돌이')" class="btn-pixel btn-amber px-3 py-1.5 text-xs sm:text-sm font-bold">
+            ❤️ 좋아요
+          </button>
+        </div>
+
+        <!-- 친구 카드 3 -->
+        <div class="bg-[#fffaf0] border-2 border-[#cbb28c] rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-[#e8f3dc] border-2 border-[#2b180c] flex items-center justify-center text-2xl">🦉</div>
+            <div>
+              <div class="font-bold text-base">부엉이 천문학자 <span class="text-xs text-[#4e8c36]">● 접속중</span></div>
+              <div class="text-xs text-[#74492b]">"밤하늘 별자리 관측 캠핑장 개장!"</div>
+            </div>
+          </div>
+          <button onclick="sendFriendHeart(this, '부엉이 천문학자')" class="btn-pixel btn-amber px-3 py-1.5 text-xs sm:text-sm font-bold">
+            ❤️ 좋아요
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [9] 전체 비우기 확인 모달 (confirm() 대체)
+       ========================================================= -->
+  <div id="resetConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+    <div class="wood-panel w-full max-w-xs overflow-hidden animate-pop text-center">
+      <div class="wood-header py-2.5 px-4">
+        <h3 class="text-base font-bold">⚠️ 캠핑장 비우기</h3>
+      </div>
+      <div class="p-5 space-y-4">
+        <p class="text-sm sm:text-base">배치한 모든 아이템을 캠핑장에서 치울까요?<br/><span class="text-xs text-[#74492b]">(해제된 아이템은 인벤토리에 유지됩니다)</span></p>
+        <div class="flex gap-2">
+          <button onclick="closeResetConfirm()" class="btn-pixel btn-wood flex-1 py-2 text-sm">취소</button>
+          <button onclick="confirmClearAllPlaced()" class="btn-pixel bg-[#eb4d4b] text-white flex-1 py-2 text-sm font-bold">비우기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       [10] 배치된 아이템 선택 액션 팝업 (위치 이동 / 뒤로 보내기 / 회수)
+       ========================================================= -->
+  <div id="placedActionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45">
+    <div class="wood-panel w-full max-w-sm overflow-hidden animate-pop text-center">
+      <div class="wood-header py-2.5 px-4 flex items-center justify-between">
+        <h3 id="selectedPlacedTitle" class="text-base font-bold truncate">배치된 아이템</h3>
+        <button onclick="closePlacedActionModal()" class="text-white font-bold px-1.5">✕</button>
+      </div>
+      <div class="p-4 space-y-3">
+        <p class="text-xs sm:text-sm text-[#5c3a21]">이 아이템의 순서를 바꾸거나 위치 이동·회수할 수 있어요!</p>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="moveSelectedPlacedItem()" class="btn-pixel btn-amber py-2.5 px-1.5 text-xs sm:text-sm font-bold">
+            ✥ 위치 이동
+          </button>
+          <button onclick="sendSelectedPlacedItemToBack()" class="btn-pixel btn-sky py-2.5 px-1.5 text-xs sm:text-sm font-bold">
+            ⬇️ 뒤로보내기
+          </button>
+          <button onclick="removeSelectedPlacedItem()" class="btn-pixel bg-[#eb4d4b] text-white py-2.5 px-1.5 text-xs sm:text-sm font-bold">
+            🎒 회수하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 배너 -->
+  <div id="toastBanner" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#2b180c] text-[#fff8eb] border-2 border-[#f6b93b] px-4 py-2 rounded-full text-sm font-bold shadow-lg pointer-events-none whitespace-nowrap">
+    알림 메시지
+  </div>
+
+  <script>
+    /**
+     * =========================================================================
+     * [미니게임 3종 통합 엔진]
+     * - 게임 1: 장작 패기 타이밍 맞추기 (5회 성공 시 열쇠 / 5회 Miss 시 메롱 애니메이션)
+     * - 게임 2: 고양이 쓰다듬기 (머리 1점, 등 2점, 엉덩이 3점 -> 10점 달성 / 꼬리 할퀴기 실패)
+     * - 게임 3: 우중철수 (10초 내 타프 안으로 아이템 전부 이동 / 시간 초과 시 대홍수)
+     * =========================================================================
+     */
+    const mgState = {
+      activeGame: 1,
+      rafId: null,
+      lastTime: 0,
+      status: 'playing',
+      axeX: 60,
+      axeDir: 1,
+      axeSpeed: 310,
+      chopHits: 0,
+      chopMisses: 0,
+      chopStrikeAnim: 0,
+      merongAnim: 0,
+      catScore: 0,
+      catMoodTimer: 0,
+      catScratchTimer: 0,
+      catFloatingTexts: [],
+      catTailAngle: 0,
+      rainTimeLeft: 7.0,
+      rainItems: [],
+      draggingItem: null,
+      rainDrops: [],
+      floodLevel: 0,
+      meatTarget: null,
+      meatCaught: 0,
+      meatWrong: 0,
+      meatHoles: [],
+      meatSpawnTimer: 0,
+      meatHitEffects: [],
+      spicyPotIndex: 0,
+      pickedPotIndex: -1,
+      fireBreathTimer: 0,
+      chestnutTool: 'shoe',
+      chestnutCollected: 0,
+      chestnutList: [],
+      chestnutSpawnTimer: 0
+    };
+
+    function startCustomMinigame() {
+      selectMinigame(mgState.activeGame || 1);
+    }
+
+    function selectMinigame(gameNum) {
+      playClickSound();
+      mgState.activeGame = gameNum;
+
+      [1, 2, 3, 4, 5, 6].forEach((n) => {
+        const tab = document.getElementById(`mgTab${n}`);
+        if (!tab) return;
+        if (n === gameNum) {
+          tab.className = 'px-2.5 py-2 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fffaf0] text-[#2b180c] font-bold text-xs whitespace-nowrap';
+        } else {
+          tab.className = 'px-2.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] text-xs whitespace-nowrap';
+        }
+      });
+
+      const titles = {
+        1: '🪓 게임 1 — 장작 패기 타이밍',
+        2: '🐱 게임 2 — 고양이 쓰다듬기',
+        3: '⛈️ 게임 3 — 7초 우중철수',
+        4: '🍖 게임 4 — 고기찾기 (두더지)',
+        5: '🔥 게임 5 — 불닭떡볶이 복불복',
+        6: '🌰 게임 6 — 밤따기 (신발 & 손)'
+      };
+      document.getElementById('minigameModalTitle').textContent = titles[gameNum];
+      restartCurrentMinigame();
+    }
+
+    function restartCurrentMinigame() {
+      if (mgState.rafId) cancelAnimationFrame(mgState.rafId);
+      mgState.status = 'playing';
+      mgState.lastTime = performance.now();
+
+      const statusText = document.getElementById('minigameStatusText');
+      const actionArea = document.getElementById('minigameActionArea');
+      actionArea.innerHTML = `
+        <button onclick="restartCurrentMinigame()" class="btn-pixel btn-wood px-4 py-2 text-xs sm:text-sm font-bold">
+          🔄 다시 시작
+        </button>
+      `;
+
+      if (mgState.activeGame === 1) {
+        mgState.axeX = 60;
+        mgState.axeDir = 1;
+        mgState.axeSpeed = 300;
+        mgState.chopHits = 0;
+        mgState.chopMisses = 0;
+        mgState.chopStrikeAnim = 0;
+        mgState.merongAnim = 0;
+        statusText.innerHTML = '도끼가 중앙 장작 위에 올 때 터치하세요! (<strong>5번 찍기</strong> 성공 / 5번 Miss 실패)';
+      } else if (mgState.activeGame === 2) {
+        mgState.catScore = 0;
+        mgState.catMoodTimer = 0;
+        mgState.catScratchTimer = 0;
+        mgState.catFloatingTexts = [];
+        mgState.catTailAngle = 0;
+        statusText.innerHTML = '머리(+1) · 등(+2) · 엉덩이(+3)를 쓰다듬어 <strong>10점</strong> 달성! <span class="text-[#c0392b]">(꼬리 금지!)</span>';
+      } else if (mgState.activeGame === 3) {
+        mgState.rainTimeLeft = 7.0;
+        mgState.draggingItem = null;
+        mgState.floodLevel = 0;
+        mgState.rainDrops = Array.from({ length: 75 }, () => ({
+          x: Math.random() * 420,
+          y: Math.random() * 315,
+          len: 10 + Math.random() * 12,
+          spd: 380 + Math.random() * 180
+        }));
+        const presets = [
+          { emoji: '🎒', name: '배낭', x: 54, y: 58 },
+          { emoji: '🏮', name: '랜턴', x: 364, y: 58 },
+          { emoji: '🪑', name: '의자', x: 52, y: 254 },
+          { emoji: '🍳', name: '코펠', x: 366, y: 254 },
+          { emoji: '🎸', name: '기타', x: 210, y: 44 },
+          { emoji: '📻', name: '라디오', x: 210, y: 274 },
+          { emoji: '🥾', name: '등산화', x: 48, y: 156 },
+          { emoji: '📷', name: '카메라', x: 372, y: 156 },
+          { emoji: '🧸', name: '인형', x: 112, y: 266 }
+        ];
+        mgState.rainItems = presets.map((p, idx) => ({
+          id: idx,
+          emoji: p.emoji,
+          name: p.name,
+          x: p.x,
+          y: p.y,
+          saved: false
+        }));
+        statusText.innerHTML = '폭우 경보! <strong>7초 안에</strong> 주변 아이템 <strong>9개</strong>를 모두 중앙 타프로 대피시키세요!';
+      } else if (mgState.activeGame === 4) {
+        const animals = [
+          { emoji: '🐷', name: '돼지' },
+          { emoji: '🐮', name: '소' },
+          { emoji: '🐑', name: '양' },
+          { emoji: '🐔', name: '닭' }
+        ];
+        mgState.meatTarget = animals[Math.floor(Math.random() * animals.length)];
+        mgState.meatCaught = 0;
+        mgState.meatWrong = 0;
+        mgState.meatSpawnTimer = 0.12;
+        mgState.meatHitEffects = [];
+        const holeCoords = [
+          { x: 95, y: 138 }, { x: 210, y: 138 }, { x: 325, y: 138 },
+          { x: 95, y: 245 }, { x: 210, y: 245 }, { x: 325, y: 245 }
+        ];
+        mgState.meatHoles = holeCoords.map((hc, idx) => ({
+          id: idx,
+          x: hc.x,
+          y: hc.y,
+          animal: null,
+          timer: 0,
+          popProgress: 0,
+          hit: false
+        }));
+        statusText.innerHTML = `🎯 목표: <strong>${mgState.meatTarget.emoji} ${mgState.meatTarget.name}</strong>만 <strong>10마리</strong> 잡으세요!`;
+      } else if (mgState.activeGame === 5) {
+        mgState.spicyPotIndex = Math.random() < 0.5 ? 0 : 1;
+        mgState.pickedPotIndex = -1;
+        mgState.fireBreathTimer = 0;
+        statusText.innerHTML = '냄비 2개 중 <strong>순한맛 떡볶이</strong>를 고르세요! <span class="text-[#c0392b]">(핵불맛 주의!)</span>';
+      } else if (mgState.activeGame === 6) {
+        mgState.chestnutTool = 'shoe';
+        mgState.chestnutCollected = 0;
+        mgState.chestnutList = [];
+        mgState.chestnutSpawnTimer = 0.1;
+        statusText.innerHTML = '<strong>👟 신발</strong>로 밤 가시를 먼저 밟아 없앤 뒤, <strong>✋ 손</strong>으로 밤 <strong>5개</strong>를 주우세요!';
+
+        actionArea.innerHTML = `
+          <div class="flex gap-2 w-full">
+            <button id="toolBtnShoe" onclick="setChestnutTool('shoe')" class="btn-pixel btn-amber flex-1 py-2 text-xs sm:text-sm font-bold border-4 border-[#2b180c]">
+              👟 신발 (가시 제거)
+            </button>
+            <button id="toolBtnHand" onclick="setChestnutTool('hand')" class="btn-pixel btn-wood flex-1 py-2 text-xs sm:text-sm font-bold opacity-75">
+              ✋ 손 (밤 줍기)
+            </button>
+          </div>
+        `;
+      }
+
+      mgState.rafId = requestAnimationFrame(updateAndRenderMinigame);
+    }
+
+    function setChestnutTool(tool) {
+      playClickSound();
+      mgState.chestnutTool = tool;
+      const btnShoe = document.getElementById('toolBtnShoe');
+      const btnHand = document.getElementById('toolBtnHand');
+      if (!btnShoe || !btnHand) return;
+
+      if (tool === 'shoe') {
+        btnShoe.className = 'btn-pixel btn-amber flex-1 py-2 text-xs sm:text-sm font-bold border-4 border-[#2b180c]';
+        btnHand.className = 'btn-pixel btn-wood flex-1 py-2 text-xs sm:text-sm font-bold opacity-75';
+      } else {
+        btnShoe.className = 'btn-pixel btn-wood flex-1 py-2 text-xs sm:text-sm font-bold opacity-75';
+        btnHand.className = 'btn-pixel btn-amber flex-1 py-2 text-xs sm:text-sm font-bold border-4 border-[#2b180c]';
+      }
+    }
+
+    function onMinigameWin(customMsg) {
+      if (mgState.status === 'win') return;
+      mgState.status = 'win';
+      gameState.keys += 1;
+      updateKeyUI();
+      playPyororongSound();
+
+      const statusText = document.getElementById('minigameStatusText');
+      const actionArea = document.getElementById('minigameActionArea');
+
+      statusText.innerHTML = `
+        <span class="text-[#d35400]">🎉 ${customMsg || '클리어 성공!'} <strong>아이템 열쇠(🔑) +1</strong> 획득! (보유: ${gameState.keys}개)</span>
+      `;
+
+      actionArea.innerHTML = `
+        <button onclick="restartCurrentMinigame()" class="btn-pixel btn-wood flex-1 py-2 text-xs sm:text-sm font-bold">
+          🔄 한 판 더 하기
+        </button>
+        <button onclick="closeMinigameModal(); openInventoryModal();" class="btn-pixel btn-green flex-1 py-2 text-xs sm:text-sm font-bold">
+          🎒 인벤토리에서 해제하기
+        </button>
+      `;
+    }
+
+    function onMinigameFail(failHtml) {
+      if (mgState.status === 'fail') return;
+      mgState.status = 'fail';
+      playChopSound();
+      document.getElementById('minigameStatusText').innerHTML = failHtml;
+      document.getElementById('minigameActionArea').innerHTML = `
+        <button onclick="restartCurrentMinigame()" class="btn-pixel btn-amber w-full py-2.5 text-sm font-bold">
+          🔄 다시 도전하기
+        </button>
+      `;
+    }
+
+    (function setupMinigameCanvasEvents() {
+      const mgCanvas = document.getElementById('minigameCanvas');
+      if (!mgCanvas) return;
+
+      function toCanvasCoords(e) {
+        const rect = mgCanvas.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: ((cx - rect.left) / rect.width) * 420,
+          y: ((cy - rect.top) / rect.height) * 315
+        };
+      }
+
+      const handleMove = (e) => {
+        if (mgState.activeGame !== 3 || !mgState.draggingItem) return;
+        const pos = toCanvasCoords(e);
+        mgState.draggingItem.x = Math.max(40, Math.min(380, pos.x));
+        mgState.draggingItem.y = Math.max(40, Math.min(280, pos.y));
+      };
+
+      const handleUp = () => {
+        if (mgState.activeGame === 3 && mgState.draggingItem) {
+          const it = mgState.draggingItem;
+          if (it.x >= 135 && it.x <= 285 && it.y >= 105 && it.y <= 215) {
+            it.saved = true;
+            playPyororongSound();
+            showToast(`⛺ [${it.name}] 타프 안으로 안전 대피 완료!`);
+
+            const allSaved = mgState.rainItems.every((item) => item.saved);
+            if (allSaved) {
+              onMinigameWin('폭우 속 9개 아이템 우중철수 성공!');
+            }
+          }
+          mgState.draggingItem = null;
+        }
+      };
+
+      const handleDown = (e) => {
+        if (mgState.status !== 'playing') return;
+        const pos = toCanvasCoords(e);
+
+        if (mgState.activeGame === 1) {
+          mgState.chopStrikeAnim = 0.22;
+          const dist = Math.abs(mgState.axeX - 210);
+          if (dist <= 34) {
+            mgState.chopHits += 1;
+            mgState.axeSpeed += 38;
+            playChopSound();
+            if (mgState.chopHits >= 5) {
+              onMinigameWin('장작 5번 패기 완벽 성공!');
+            } else {
+              document.getElementById('minigameStatusText').innerHTML =
+                `💥 <strong>나이스 샷!</strong> (${mgState.chopHits} / 5 성공) — 계속 타이밍을 맞추세요!`;
+            }
+          } else {
+            mgState.chopMisses += 1;
+            playClickSound();
+            if (mgState.chopMisses >= 5) {
+              mgState.merongAnim = 1.0;
+              onMinigameFail('<span class="text-[#e55039] text-base">😛 메롱~! 5번 빗나갔어요! 다시 도전해보세요!</span>');
+            } else {
+              document.getElementById('minigameStatusText').innerHTML =
+                `💦 <strong>아깝다 MISS!</strong> (실패 ${mgState.chopMisses} / 5) — 중앙 장작을 노리세요!`;
+            }
+          }
+        } else if (mgState.activeGame === 2) {
+          const tailDist = Math.hypot(pos.x - 292, pos.y - 178);
+          const headDist = Math.hypot(pos.x - 148, pos.y - 145);
+          const buttDist = Math.hypot(pos.x - 252, pos.y - 182);
+          const backDist = Math.hypot(pos.x - 202, pos.y - 168);
+
+          if (tailDist <= 32) {
+            mgState.catScratchTimer = 1.0;
+            onMinigameFail('<span class="text-[#e55039] text-base">😾 캬악! 꼬리를 만져서 고양이가 화면을 할퀴었어요!</span>');
+            return;
+          }
+
+          let pts = 0;
+          let label = '';
+          if (headDist <= 38) {
+            pts = 1;
+            label = '머리 쓰담 +1점 💕';
+          } else if (buttDist <= 34) {
+            pts = 3;
+            label = '엉덩이 토닥 +3점 💖';
+          } else if (backDist <= 42) {
+            pts = 2;
+            label = '등 쓰담 +2점 ✨';
+          }
+
+          if (pts > 0) {
+            mgState.catScore = Math.min(10, mgState.catScore + pts);
+            mgState.catMoodTimer = 0.65;
+            playPyororongSound();
+            mgState.catFloatingTexts.push({
+              x: pos.x,
+              y: pos.y - 10,
+              text: label,
+              life: 1.0
+            });
+
+            if (mgState.catScore >= 10) {
+              onMinigameWin('고양이 만족도 10점 달성!');
+            } else {
+              document.getElementById('minigameStatusText').innerHTML =
+                `😻 기분 최고! 현재 점수: <strong>${mgState.catScore} / 10점</strong>`;
+            }
+          }
+        } else if (mgState.activeGame === 3) {
+          for (let i = mgState.rainItems.length - 1; i >= 0; i--) {
+            const it = mgState.rainItems[i];
+            if (!it.saved && Math.hypot(pos.x - it.x, pos.y - it.y) <= 28) {
+              mgState.draggingItem = it;
+              playClickSound();
+              break;
+            }
+          }
+        } else if (mgState.activeGame === 4) {
+          for (const hole of mgState.meatHoles) {
+            if (hole.animal && !hole.hit && hole.popProgress > 0.22) {
+              const animY = hole.y - 26 * hole.popProgress;
+              if (Math.hypot(pos.x - hole.x, pos.y - animY) <= 36) {
+                hole.hit = true;
+                hole.timer = 0.22;
+                if (hole.animal.name === mgState.meatTarget.name) {
+                  mgState.meatCaught += 1;
+                  playPyororongSound();
+                  mgState.meatHitEffects.push({ x: hole.x, y: animY - 18, text: `나이스! +1`, color: '#2ecc71', life: 0.85 });
+                  if (mgState.meatCaught >= 10) {
+                    onMinigameWin(`${mgState.meatTarget.emoji} ${mgState.meatTarget.name} 10마리 사냥 성공!`);
+                  } else {
+                    document.getElementById('minigameStatusText').innerHTML =
+                      `🎯 <strong>${mgState.meatTarget.emoji} ${mgState.meatTarget.name}</strong> 잡기: <strong>${mgState.meatCaught} / 10마리</strong> (실수 ${mgState.meatWrong}/3)`;
+                  }
+                } else {
+                  mgState.meatWrong += 1;
+                  playChopSound();
+                  mgState.meatHitEffects.push({ x: hole.x, y: animY - 18, text: `앗! ${hole.animal.name} ❌`, color: '#ff4757', life: 0.95 });
+                  if (mgState.meatWrong >= 3) {
+                    onMinigameFail(`<span class="text-[#e55039] text-base">💥 앗! 다른 동물을 3번 때려서 실패했어요!</span>`);
+                  } else {
+                    document.getElementById('minigameStatusText').innerHTML =
+                      `⚠️ 목표는 <strong>${mgState.meatTarget.emoji} ${mgState.meatTarget.name}</strong>예요! (실수 <strong>${mgState.meatWrong} / 3</strong>)`;
+                  }
+                }
+                break;
+              }
+            }
+          }
+        } else if (mgState.activeGame === 5) {
+          const pot1Dist = Math.hypot(pos.x - 125, pos.y - 185);
+          const pot2Dist = Math.hypot(pos.x - 295, pos.y - 185);
+          let chosen = -1;
+          if (pot1Dist <= 56) chosen = 0;
+          else if (pot2Dist <= 56) chosen = 1;
+
+          if (chosen !== -1) {
+            mgState.pickedPotIndex = chosen;
+            if (chosen === mgState.spicyPotIndex) {
+              mgState.fireBreathTimer = 1.0;
+              onMinigameFail('<span class="text-[#ff3838] text-base">🔥 크아악!! 핵불맛 떡볶이다!! 입에서 불이 뿜어져 나와요!!</span>');
+            } else {
+              onMinigameWin('🍯 달콤매콤 순한맛 떡볶이 당첨!');
+            }
+          }
+        } else if (mgState.activeGame === 6) {
+          for (let i = mgState.chestnutList.length - 1; i >= 0; i--) {
+            const ch = mgState.chestnutList[i];
+            if (Math.hypot(pos.x - ch.x, pos.y - ch.y) <= 34) {
+              if (mgState.chestnutTool === 'shoe') {
+                if (ch.spikes > 0) {
+                  ch.spikes -= 1;
+                  playChopSound();
+                  if (ch.spikes === 0) {
+                    showToast('👟 짝! 가시가 모두 제거되었어요! 이제 손으로 주우세요.');
+                  } else {
+                    showToast('👟 튼튼한 밤송이! 한 번 더 밟아야 가시가 벗겨져요!');
+                  }
+                } else {
+                  showToast('✨ 이미 가시가 없어요! 아래 [✋ 손]을 선택해 주우세요.');
+                }
+              } else {
+                if (ch.spikes > 0) {
+                  onMinigameFail('<span class="text-[#e55039] text-base">💥 앗따거!! 가시 있는 밤을 손으로 만져서 손이 퉁퉁 부었어요!!</span>');
+                } else {
+                  mgState.chestnutList.splice(i, 1);
+                  mgState.chestnutCollected += 1;
+                  playPyororongSound();
+                  if (mgState.chestnutCollected >= 5) {
+                    onMinigameWin('🌰 알밤 5개 채집 완벽 성공!');
+                  } else {
+                    document.getElementById('minigameStatusText').innerHTML =
+                      `🌰 알밤 채집: <strong>${mgState.chestnutCollected} / 5개</strong> (신발로 가시 제거 후 손으로 줍기!)`;
+                  }
+                }
+              }
+              break;
+            }
+          }
+        }
+      };
+
+      mgCanvas.addEventListener('mousedown', handleDown);
+      mgCanvas.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
+
+      mgCanvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleDown(e);
+      }, { passive: false });
+      mgCanvas.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleUp);
+    })();
+
+    function updateAndRenderMinigame(now) {
+      const mgCanvas = document.getElementById('minigameCanvas');
+      if (!mgCanvas || document.getElementById('minigameModal').classList.contains('hidden')) {
+        mgState.rafId = null;
+        return;
+      }
+
+      const dt = Math.min(0.05, (now - mgState.lastTime) / 1000);
+      mgState.lastTime = now;
+      const gCtx = mgCanvas.getContext('2d');
+      gCtx.clearRect(0, 0, 420, 315);
+
+      if (mgState.activeGame === 1) {
+        renderMinigame1WoodChop(gCtx, dt);
+      } else if (mgState.activeGame === 2) {
+        renderMinigame2CatPet(gCtx, dt);
+      } else if (mgState.activeGame === 3) {
+        renderMinigame3RainEvac(gCtx, dt);
+      } else if (mgState.activeGame === 4) {
+        renderMinigame4MeatWhack(gCtx, dt);
+      } else if (mgState.activeGame === 5) {
+        renderMinigame5SpicyTteok(gCtx, dt);
+      } else if (mgState.activeGame === 6) {
+        renderMinigame6Chestnut(gCtx, dt);
+      }
+
+      mgState.rafId = requestAnimationFrame(updateAndRenderMinigame);
+    }
+
+    function renderMinigame1WoodChop(ctx, dt) {
+      ctx.fillStyle = '#78b159';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#5c913b';
+      ctx.fillRect(0, 215, 420, 100);
+
+      ctx.font = 'bold 14px "Jua", sans-serif';
+      ctx.fillStyle = '#2b180c';
+      ctx.textAlign = 'left';
+      ctx.fillText(`성공: ${'🪵'.repeat(mgState.chopHits)}${'▫️'.repeat(5 - mgState.chopHits)}`, 16, 28);
+      ctx.textAlign = 'right';
+      ctx.fillText(`실패: ${'❌'.repeat(mgState.chopMisses)}${'▫️'.repeat(5 - mgState.chopMisses)}`, 404, 28);
+
+      ctx.fillStyle = '#ead7b7';
+      ctx.beginPath();
+      ctx.roundRect(45, 52, 330, 18, 9);
+      ctx.fill();
+      ctx.strokeStyle = '#2b180c';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#f6b93b';
+      ctx.fillRect(210 - 34, 54, 68, 14);
+
+      ctx.fillStyle = '#8c5319';
+      ctx.beginPath();
+      ctx.roundRect(172, 200, 76, 56, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#2b180c';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = '#f5deb3';
+      ctx.beginPath();
+      ctx.ellipse(210, 200, 38, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#b87d4b';
+      ctx.beginPath();
+      ctx.roundRect(194, 152, 32, 46, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      if (mgState.status === 'playing') {
+        mgState.axeX += mgState.axeDir * mgState.axeSpeed * dt;
+        if (mgState.axeX >= 365) {
+          mgState.axeX = 365;
+          mgState.axeDir = -1;
+        } else if (mgState.axeX <= 55) {
+          mgState.axeX = 55;
+          mgState.axeDir = 1;
+        }
+      }
+      if (mgState.chopStrikeAnim > 0) mgState.chopStrikeAnim -= dt;
+
+      const axeY = mgState.chopStrikeAnim > 0 ? 148 : 96;
+      ctx.save();
+      ctx.translate(mgState.axeX, axeY);
+      if (mgState.chopStrikeAnim > 0) ctx.rotate(-0.45);
+      ctx.font = '46px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🪓', 0, 0);
+      ctx.restore();
+
+      if (mgState.status === 'fail') {
+        mgState.merongAnim += dt * 7;
+        const bounceY = Math.sin(mgState.merongAnim) * 14;
+        const tilt = Math.sin(mgState.merongAnim * 1.4) * 0.28;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(0, 0, 420, 315);
+
+        ctx.save();
+        ctx.translate(210, 150 + bounceY);
+        ctx.rotate(tilt);
+        ctx.font = '86px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('😛', 0, 0);
+
+        ctx.font = 'bold 26px "Jua", sans-serif';
+        ctx.fillStyle = '#fffa65';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 5;
+        ctx.strokeText('메~롱!!', 0, 62);
+        ctx.fillText('메~롱!!', 0, 62);
+        ctx.restore();
+      }
+    }
+
+    function renderMinigame2CatPet(ctx, dt) {
+      ctx.fillStyle = '#fdf5e6';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#f3d59b';
+      ctx.beginPath();
+      ctx.roundRect(35, 45, 350, 235, 22);
+      ctx.fill();
+      ctx.strokeStyle = '#c89d54';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.font = 'bold 16px "Jua", sans-serif';
+      ctx.fillStyle = '#2b180c';
+      ctx.textAlign = 'center';
+      ctx.fillText(`😻 고양이 행복지수: ${mgState.catScore} / 10점`, 210, 30);
+
+      if (mgState.catMoodTimer > 0) mgState.catMoodTimer -= dt;
+      mgState.catTailAngle += dt * 4.5;
+
+      ctx.save();
+      ctx.translate(268, 185);
+      ctx.rotate(Math.sin(mgState.catTailAngle) * 0.35);
+      ctx.strokeStyle = '#e67e22';
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(26, -24, 34, -4);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#f39c12';
+      ctx.beginPath();
+      ctx.ellipse(208, 178, 62, 42, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#2b180c';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = '#d35400';
+      ctx.fillRect(190, 142, 8, 16);
+      ctx.fillRect(206, 140, 8, 18);
+      ctx.fillRect(222, 143, 8, 15);
+
+      ctx.fillStyle = '#f39c12';
+      ctx.beginPath();
+      ctx.arc(148, 145, 36, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(122, 122);
+      ctx.lineTo(126, 94);
+      ctx.lineTo(144, 112);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(154, 112);
+      ctx.lineTo(170, 94);
+      ctx.lineTo(174, 122);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#2b180c';
+      ctx.strokeStyle = '#2b180c';
+      ctx.lineWidth = 2.5;
+      if (mgState.catMoodTimer > 0 || mgState.status === 'win') {
+        ctx.beginPath();
+        ctx.arc(136, 143, 6, Math.PI, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(160, 143, 6, Math.PI, 0);
+        ctx.stroke();
+        ctx.fillStyle = '#ff7675';
+        ctx.beginPath();
+        ctx.arc(128, 152, 5, 0, Math.PI * 2);
+        ctx.arc(168, 152, 5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.arc(136, 142, 4, 0, Math.PI * 2);
+        ctx.arc(160, 142, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#ff7675';
+      ctx.beginPath();
+      ctx.arc(148, 150, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(144, 154, 4, 0, Math.PI);
+      ctx.arc(152, 154, 4, 0, Math.PI);
+      ctx.stroke();
+
+      ctx.font = 'bold 12px "Jua", sans-serif';
+      ctx.fillStyle = '#5c3a21';
+      ctx.fillText('머리(+1)', 148, 198);
+      ctx.fillText('등(+2)', 204, 234);
+      ctx.fillText('엉덩이(+3)', 255, 224);
+      ctx.fillStyle = '#c0392b';
+      ctx.fillText('꼬리(위험!)', 305, 152);
+
+      for (let i = mgState.catFloatingTexts.length - 1; i >= 0; i--) {
+        const ft = mgState.catFloatingTexts[i];
+        ft.y -= 28 * dt;
+        ft.life -= 1.2 * dt;
+        if (ft.life <= 0) {
+          mgState.catFloatingTexts.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = ft.life;
+        ctx.font = 'bold 15px "Jua", sans-serif';
+        ctx.fillStyle = '#d35400';
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      if (mgState.status === 'fail') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.fillRect(0, 0, 420, 315);
+
+        ctx.strokeStyle = '#ff3838';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        for (let s = -1; s <= 1; s++) {
+          ctx.beginPath();
+          ctx.moveTo(120 + s * 34, 65);
+          ctx.lineTo(290 + s * 34, 250);
+          ctx.stroke();
+        }
+        ctx.font = 'bold 28px "Jua", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 5;
+        ctx.strokeText('🐾 크아앙! 할퀴기 실패!', 210, 160);
+        ctx.fillText('🐾 크아앙! 할퀴기 실패!', 210, 160);
+      }
+    }
+
+    function renderMinigame3RainEvac(ctx, dt) {
+      ctx.fillStyle = '#3b593f';
+      ctx.fillRect(0, 0, 420, 315);
+
+      if (mgState.status === 'playing') {
+        mgState.rainTimeLeft -= dt;
+        if (mgState.rainTimeLeft <= 0) {
+          mgState.rainTimeLeft = 0;
+          onMinigameFail('<span class="text-[#0abde3] text-base">🌊 시간 초과! 캠핑장에 대홍수가 났어요!</span>');
+        }
+      }
+
+      ctx.fillStyle = '#f5deb3';
+      ctx.beginPath();
+      ctx.roundRect(135, 105, 150, 110, 16);
+      ctx.fill();
+      ctx.strokeStyle = '#2b180c';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.font = 'bold 13px "Jua", sans-serif';
+      ctx.fillStyle = '#5c3a21';
+      ctx.textAlign = 'center';
+      ctx.fillText('⛺ 안전 타프 구역', 210, 126);
+
+      mgState.rainItems.forEach((it) => {
+        ctx.save();
+        ctx.font = '32px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(it.emoji, it.x, it.y);
+        if (it.saved) {
+          ctx.font = 'bold 12px "Jua", sans-serif';
+          ctx.fillStyle = '#218c74';
+          ctx.fillText('OK!', it.x, it.y + 20);
+        }
+        ctx.restore();
+      });
+
+      ctx.strokeStyle = 'rgba(174, 214, 241, 0.72)';
+      ctx.lineWidth = 2;
+      mgState.rainDrops.forEach((r) => {
+        r.x -= 65 * dt;
+        r.y += r.spd * dt;
+        if (r.y > 315) {
+          r.y = -15;
+          r.x = Math.random() * 450;
+        }
+        ctx.beginPath();
+        ctx.moveTo(r.x, r.y);
+        ctx.lineTo(r.x - 4, r.y + r.len);
+        ctx.stroke();
+      });
+
+      ctx.fillStyle = 'rgba(43, 24, 12, 0.8)';
+      ctx.beginPath();
+      ctx.roundRect(125, 10, 170, 28, 12);
+      ctx.fill();
+      ctx.font = 'bold 15px "Jua", sans-serif';
+      ctx.fillStyle = mgState.rainTimeLeft <= 3 ? '#ff6b6b' : '#ffeaa7';
+      ctx.fillText(`⏱️ 남은 시간: ${mgState.rainTimeLeft.toFixed(1)}초`, 210, 29);
+
+      if (mgState.status === 'fail') {
+        mgState.floodLevel = Math.min(315, mgState.floodLevel + 260 * dt);
+        const waterTop = 315 - mgState.floodLevel;
+
+        ctx.fillStyle = 'rgba(10, 132, 255, 0.78)';
+        ctx.fillRect(0, waterTop, 420, mgState.floodLevel);
+
+        ctx.fillStyle = '#48dbfb';
+        const waveTime = performance.now();
+        for (let wx = 0; wx < 420; wx += 30) {
+          const wy = waterTop + Math.sin((wx + waveTime * 0.25) * 0.05) * 6;
+          ctx.beginPath();
+          ctx.arc(wx + 15, wy, 16, Math.PI, 0);
+          ctx.fill();
+        }
+
+        ctx.font = 'bold 30px "Jua", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#1b1464';
+        ctx.lineWidth = 5;
+        ctx.strokeText('🌊 대홍수 발생!! 🌊', 210, 155);
+        ctx.fillText('🌊 대홍수 발생!! 🌊', 210, 155);
+      }
+    }
+
+    function renderMinigame4MeatWhack(ctx, dt) {
+      ctx.fillStyle = '#7bed9f';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#2ed573';
+      ctx.fillRect(0, 62, 420, 253);
+
+      ctx.fillStyle = '#2b180c';
+      ctx.beginPath();
+      ctx.roundRect(14, 10, 392, 42, 12);
+      ctx.fill();
+
+      ctx.font = 'bold 15px "Jua", sans-serif';
+      ctx.fillStyle = '#ffeaa7';
+      ctx.textAlign = 'left';
+      const target = mgState.meatTarget || { emoji: '🐷', name: '돼지' };
+      ctx.fillText(`지시: ${target.emoji} ${target.name} (${mgState.meatCaught}/10)`, 26, 36);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ff7675';
+      ctx.fillText(`오답: ${'❌'.repeat(mgState.meatWrong)}${'▫️'.repeat(3 - mgState.meatWrong)}`, 394, 36);
+
+      if (mgState.status === 'playing') {
+        mgState.meatSpawnTimer -= dt;
+        if (mgState.meatSpawnTimer <= 0) {
+          mgState.meatSpawnTimer = 0.16 + Math.random() * 0.18;
+          const emptyHoles = mgState.meatHoles.filter((h) => !h.animal);
+          if (emptyHoles.length > 0) {
+            const pickHole = emptyHoles[Math.floor(Math.random() * emptyHoles.length)];
+            const pool = [
+              { emoji: '🐷', name: '돼지' },
+              { emoji: '🐮', name: '소' },
+              { emoji: '🐑', name: '양' },
+              { emoji: '🐔', name: '닭' }
+            ];
+            const chosenAnimal = Math.random() < 0.42
+              ? target
+              : pool[Math.floor(Math.random() * pool.length)];
+            pickHole.animal = chosenAnimal;
+            pickHole.timer = 0.62 + Math.random() * 0.24;
+            pickHole.popProgress = 0;
+            pickHole.hit = false;
+          }
+        }
+      }
+
+      mgState.meatHoles.forEach((h) => {
+        ctx.fillStyle = '#4a2e1b';
+        ctx.beginPath();
+        ctx.ellipse(h.x, h.y, 40, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        if (h.animal) {
+          if (mgState.status === 'playing') {
+            h.timer -= dt;
+            if (h.timer > 0.14) {
+              h.popProgress = Math.min(1, h.popProgress + dt * 10.5);
+            } else {
+              h.popProgress = Math.max(0, h.popProgress - dt * 10.5);
+            }
+            if (h.timer <= 0) {
+              h.animal = null;
+              h.popProgress = 0;
+            }
+          }
+
+          if (h.animal && h.popProgress > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(h.x - 42, h.y - 75, 84, 78);
+            ctx.clip();
+
+            const drawY = h.y + 14 - 40 * h.popProgress;
+            ctx.font = '44px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(h.animal.emoji, h.x, drawY);
+            ctx.restore();
+          }
+        }
+
+        ctx.fillStyle = '#8c5830';
+        ctx.beginPath();
+        ctx.ellipse(h.x, h.y + 8, 42, 9, 0, 0, Math.PI);
+        ctx.fill();
+      });
+
+      for (let i = mgState.meatHitEffects.length - 1; i >= 0; i--) {
+        const ef = mgState.meatHitEffects[i];
+        ef.y -= 26 * dt;
+        ef.life -= 1.2 * dt;
+        if (ef.life <= 0) {
+          mgState.meatHitEffects.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = ef.life;
+        ctx.font = 'bold 16px "Jua", sans-serif';
+        ctx.fillStyle = ef.color;
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 3;
+        ctx.strokeText(ef.text, ef.x, ef.y);
+        ctx.fillText(ef.text, ef.x, ef.y);
+        ctx.restore();
+      }
+    }
+
+    function renderMinigame5SpicyTteok(ctx, dt) {
+      ctx.fillStyle = '#fff3d1';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#d35400';
+      ctx.fillRect(0, 235, 420, 80);
+
+      ctx.font = 'bold 18px "Jua", sans-serif';
+      ctx.fillStyle = '#2b180c';
+      ctx.textAlign = 'center';
+      ctx.fillText('🍲 어떤 냄비의 떡볶이를 먹을까요?', 210, 38);
+      ctx.font = '13px "Jua", sans-serif';
+      ctx.fillStyle = '#74492b';
+      ctx.fillText('하나만 순한맛! 핵불맛을 고르면 불을 뿜어요!', 210, 60);
+
+      const pots = [
+        { x: 125, y: 185, label: '1번 냄비' },
+        { x: 295, y: 185, label: '2번 냄비' }
+      ];
+
+      pots.forEach((pot, idx) => {
+        const isSpicy = mgState.spicyPotIndex === idx;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.beginPath();
+        ctx.ellipse(pot.x, pot.y + 42, 48, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath();
+        ctx.roundRect(pot.x - 44, pot.y - 12, 88, 52, 12);
+        ctx.fill();
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#e67e22';
+        ctx.fillRect(pot.x - 54, pot.y - 2, 10, 14);
+        ctx.strokeRect(pot.x - 54, pot.y - 2, 10, 14);
+        ctx.fillRect(pot.x + 44, pot.y - 2, 10, 14);
+        ctx.strokeRect(pot.x + 44, pot.y - 2, 10, 14);
+
+        ctx.fillStyle = (mgState.status !== 'playing' && isSpicy) ? '#b33939' : '#e55039';
+        ctx.beginPath();
+        ctx.ellipse(pot.x, pot.y - 10, 42, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff8eb';
+        ctx.fillRect(pot.x - 20, pot.y - 14, 16, 6);
+        ctx.fillRect(pot.x + 4, pot.y - 12, 16, 6);
+        ctx.fillStyle = '#2ecc71';
+        ctx.beginPath();
+        ctx.arc(pot.x - 2, pot.y - 11, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        const steamOffset = Math.sin(performance.now() * 0.005 + idx) * 5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(pot.x - 12, pot.y - 30);
+        ctx.quadraticCurveTo(pot.x - 18 + steamOffset, pot.y - 45, pot.x - 10, pot.y - 58);
+        ctx.moveTo(pot.x + 12, pot.y - 30);
+        ctx.quadraticCurveTo(pot.x + 18 - steamOffset, pot.y - 45, pot.x + 10, pot.y - 58);
+        ctx.stroke();
+
+        ctx.font = 'bold 15px "Jua", sans-serif';
+        ctx.fillStyle = '#2b180c';
+        ctx.fillText(pot.label, pot.x, pot.y + 62);
+
+        if (mgState.status !== 'playing') {
+          ctx.font = 'bold 14px "Jua", sans-serif';
+          ctx.fillStyle = isSpicy ? '#c0392b' : '#218c74';
+          ctx.fillText(isSpicy ? '💀 핵불맛!' : '🍯 순한맛!', pot.x, pot.y - 38);
+        }
+      });
+
+      if (mgState.status === 'fail') {
+        const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.12;
+        ctx.fillStyle = 'rgba(43, 10, 10, 0.55)';
+        ctx.fillRect(0, 0, 420, 315);
+
+        ctx.save();
+        ctx.translate(155, 165);
+        ctx.scale(pulse, pulse);
+
+        const grad = ctx.createLinearGradient(0, 0, 220, 0);
+        grad.addColorStop(0, '#fff200');
+        grad.addColorStop(0.45, '#ff9f1a');
+        grad.addColorStop(1, '#ff3838');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, -8);
+        ctx.lineTo(210, -68);
+        ctx.lineTo(195, 0);
+        ctx.lineTo(215, 68);
+        ctx.lineTo(0, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        ctx.font = '76px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🥵', 115, 165);
+
+        ctx.font = '38px sans-serif';
+        ctx.fillText('🔥', 225, 145);
+        ctx.fillText('🔥', 275, 175);
+        ctx.fillText('🔥', 325, 150);
+
+        ctx.font = 'bold 28px "Jua", sans-serif';
+        ctx.fillStyle = '#fffa65';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 5;
+        ctx.strokeText('화아아악!! 핵불닭 당첨!!', 210, 265);
+        ctx.fillText('화아아악!! 핵불닭 당첨!!', 210, 265);
+      }
+    }
+
+    function renderMinigame6Chestnut(ctx, dt) {
+      ctx.fillStyle = '#8c5830';
+      ctx.fillRect(0, 0, 420, 315);
+      ctx.fillStyle = '#a66e44';
+      ctx.fillRect(0, 48, 420, 267);
+
+      ctx.fillStyle = '#2b180c';
+      ctx.fillRect(0, 0, 420, 46);
+      ctx.font = 'bold 15px "Jua", sans-serif';
+      ctx.fillStyle = '#ffeaa7';
+      ctx.textAlign = 'left';
+      ctx.fillText(`🌰 알밤: ${mgState.chestnutCollected} / 5개`, 16, 29);
+
+      ctx.textAlign = 'right';
+      const toolLabel = mgState.chestnutTool === 'shoe' ? '👟 신발 선택중 (가시밟기)' : '✋ 손 선택중 (밤줍기)';
+      ctx.fillStyle = mgState.chestnutTool === 'shoe' ? '#f6b93b' : '#55efc4';
+      ctx.fillText(toolLabel, 404, 29);
+
+      if (mgState.status === 'playing') {
+        mgState.chestnutSpawnTimer -= dt;
+        if (mgState.chestnutSpawnTimer <= 0 && mgState.chestnutList.length < 5) {
+          mgState.chestnutSpawnTimer = 0.85 + Math.random() * 0.65;
+          let nx = 65 + Math.random() * 290;
+          let ny = 95 + Math.random() * 175;
+          mgState.chestnutList.push({
+            x: nx,
+            y: ny,
+            spikes: Math.random() < 0.45 ? 2 : 1,
+            dropAnim: 1.0
+          });
+        }
+      }
+
+      mgState.chestnutList.forEach((ch) => {
+        if (ch.dropAnim > 0) ch.dropAnim = Math.max(0, ch.dropAnim - dt * 3.5);
+        const offsetY = -ch.dropAnim * 45;
+
+        ctx.save();
+        ctx.translate(ch.x, ch.y + offsetY);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(0, 20 - offsetY, 22, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (ch.spikes > 0) {
+          ctx.fillStyle = ch.spikes === 2 ? '#218c74' : '#6ab04c';
+          ctx.strokeStyle = '#1e272e';
+          ctx.lineWidth = 2;
+          const spikesCount = 12;
+          ctx.beginPath();
+          for (let s = 0; s < spikesCount * 2; s++) {
+            const r = s % 2 === 0 ? 28 : 17;
+            const a = (s * Math.PI) / spikesCount;
+            const px = Math.cos(a) * r;
+            const py = Math.sin(a) * r;
+            if (s === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.font = '24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🌰', 0, 1);
+
+          ctx.font = 'bold 11px "Jua", sans-serif';
+          ctx.fillStyle = '#fff200';
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 3;
+          ctx.strokeText(`가시 ${ch.spikes}회`, 0, -28);
+          ctx.fillText(`가시 ${ch.spikes}회`, 0, -28);
+        } else {
+          ctx.font = '34px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🌰', 0, 0);
+
+          ctx.font = 'bold 11px "Jua", sans-serif';
+          ctx.fillStyle = '#55efc4';
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 3;
+          ctx.strokeText('✨ 줍기 가능!', 0, -26);
+          ctx.fillText('✨ 줍기 가능!', 0, -26);
+        }
+
+        ctx.restore();
+      });
+
+      if (mgState.status === 'fail') {
+        const swellScale = 1.15 + Math.sin(performance.now() * 0.015) * 0.08;
+        ctx.fillStyle = 'rgba(43, 10, 10, 0.72)';
+        ctx.fillRect(0, 0, 420, 315);
+
+        ctx.save();
+        ctx.translate(210, 132);
+        ctx.scale(swellScale, swellScale);
+
+        ctx.fillStyle = '#ff6b6b';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.ellipse(0, 12, 38, 34, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        const fingers = [
+          { x: -34, y: 6, r: 12, a: -0.6 },
+          { x: -20, y: -22, r: 12, a: -0.2 },
+          { x: 0, y: -28, r: 13, a: 0 },
+          { x: 20, y: -22, r: 12, a: 0.2 },
+          { x: 34, y: -8, r: 11, a: 0.45 }
+        ];
+        fingers.forEach((f) => {
+          ctx.beginPath();
+          ctx.ellipse(f.x, f.y, f.r, f.r * 1.45, f.a, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = '#ffeaa7';
+        ctx.fillRect(-14, 4, 28, 11);
+        ctx.strokeRect(-14, 4, 28, 11);
+        ctx.font = '26px sans-serif';
+        ctx.fillText('💢', -44, -28);
+        ctx.fillText('💦', 42, -26);
+        ctx.restore();
+
+        ctx.font = 'bold 25px "Jua", sans-serif';
+        ctx.fillStyle = '#fffa65';
+        ctx.strokeStyle = '#2b180c';
+        ctx.lineWidth = 5;
+        ctx.textAlign = 'center';
+        ctx.strokeText('아야야!! 손이 퉁퉁 부었어요!!', 210, 235);
+        ctx.fillText('아야야!! 손이 퉁퉁 부었어요!!', 210, 235);
+      }
+    }
+
+    const CAMPING_ASSET_MANIFEST = {
+      '텐트': [
+        { file: '낡은텐트.png', name: '낡은 텐트', fallbackType: 'tent_old', unlocked: true },
+        { file: '삼각텐트.png', name: '삼각 A형 텐트', fallbackType: 'tent_triangle', unlocked: false },
+        { file: '돔텐트.png', name: '스카이 돔 텐트', fallbackType: 'tent_dome', unlocked: false },
+        { file: '헥사타프.png', name: '우드 헥사 타프', fallbackType: 'tent_tarp', unlocked: false }
+      ],
+      '모닥불_조명': [
+        { file: '모닥불.png', name: '돌담 모닥불', fallbackType: 'fire_pit', unlocked: false },
+        { file: '랜턴.png', name: '빈티지 랜턴', fallbackType: 'lantern_stand', unlocked: false },
+        { file: '가랜드.png', name: '별빛 가랜드', fallbackType: 'string_lights', unlocked: false },
+        { file: '횃불.png', name: '대나무 횃불', fallbackType: 'torch_lamp', unlocked: false }
+      ],
+      '캠핑가구': [
+        { file: '우드체어.png', name: '우드 체어', fallbackType: 'chair_wood', unlocked: false },
+        { file: '테이블.png', name: '롤탑 테이블', fallbackType: 'table_roll', unlocked: false },
+        { file: '해먹.png', name: '무지개 해먹', fallbackType: 'hammock', unlocked: false },
+        { file: '통나무벤치.png', name: '통나무 벤치', fallbackType: 'log_bench', unlocked: false }
+      ],
+      '취사_소품': [
+        { file: '주전자.png', name: '버너와 주전자', fallbackType: 'kettle_stove', unlocked: false },
+        { file: '아이스박스.png', name: '아이스박스', fallbackType: 'cooler_box', unlocked: false },
+        { file: '바구니.png', name: '피크닉 바구니', fallbackType: 'picnic_basket', unlocked: false },
+        { file: '통기타.png', name: '캠핑 통기타', fallbackType: 'guitar_wood', unlocked: false }
+      ],
+      '자연_장식': [
+        { file: '장작더미.png', name: '장작 더미', fallbackType: 'wood_pile', unlocked: false },
+        { file: '꽃밭.png', name: '야생화 꽃밭', fallbackType: 'flower_patch', unlocked: false },
+        { file: '이정표.png', name: '캠핑 이정표', fallbackType: 'camp_sign', unlocked: false },
+        { file: '그루터기.png', name: '버섯 그루터기', fallbackType: 'stump_mushroom', unlocked: false }
+      ]
+    };
+
+    let ASSET_CATALOG = {};
+    const loadedItemImages = {};
+
+    function stripPngExt(name) {
+      return name.replace(/\.png$/i, '');
+    }
+
+    // GitHub Pages / 정적 서버에서 ./camping_asset/ 경로를 사용자 개입 없이 자동 로딩
+    async function initDefaultAssetCatalog() {
+      let rawManifest = null;
+
+      // 1) 만약 camping_asset/manifest.json 파일을 함께 올려두었다면 자동으로 먼저 읽어옴
+      try {
+        const res = await fetch('./camping_asset/manifest.json');
+        if (res.ok) {
+          rawManifest = await res.json();
+        }
+      } catch (e) {}
+
+      // 2) GitHub Pages 호스팅(*.github.io)일 경우 GitHub Contents API로 camping_asset 하위 폴더/파일 자동 탐색 시도
+      if (!rawManifest && window.location.hostname.endsWith('.github.io')) {
+        try {
+          const owner = window.location.hostname.split('.')[0];
+          const pathSegs = window.location.pathname.split('/').filter(Boolean);
+          const repo = pathSegs[0] || `${owner}.github.io`;
+          const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/camping_asset`;
+          const rootRes = await fetch(apiBase);
+          if (rootRes.ok) {
+            const entries = await rootRes.json();
+            if (Array.isArray(entries)) {
+              const autoMap = {};
+              for (const entry of entries) {
+                if (entry.type === 'dir') {
+                  const subRes = await fetch(entry.url);
+                  if (subRes.ok) {
+                    const files = await subRes.json();
+                    const pngs = files
+                      .filter((f) => f.type === 'file' && /\.png$/i.test(f.name) && !f.name.startsWith('._'))
+                      .map((f) => f.name);
+                    if (pngs.length > 0) autoMap[entry.name] = pngs;
+                  }
+                }
+              }
+              if (Object.keys(autoMap).length > 0) {
+                rawManifest = autoMap;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3) 외부 매니페스트가 없으면 상단 CAMPING_ASSET_MANIFEST 설정 사용
+      const sourceObj = rawManifest || CAMPING_ASSET_MANIFEST;
+      const catalog = {};
+      let starterAssigned = false;
+
+      Object.keys(sourceObj).forEach((folderName) => {
+        const list = sourceObj[folderName] || [];
+        catalog[folderName] = list.map((entry, idx) => {
+          const fileName = typeof entry === 'string' ? entry : entry.file;
+          const displayName = typeof entry === 'string' ? stripPngExt(entry) : (entry.name || stripPngExt(fileName));
+          const itemId = `${folderName}__${fileName}`;
+          const isOldTent = typeof entry === 'object' && entry.unlocked !== undefined
+            ? entry.unlocked
+            : (/낡은|old/i.test(displayName) && !starterAssigned);
+
+          if (isOldTent) starterAssigned = true;
+
+          return {
+            id: itemId,
+            name: displayName,
+            fileName: fileName,
+            folder: folderName,
+            fallbackType: (typeof entry === 'object' && entry.fallbackType) ? entry.fallbackType : 'tent_old',
+            unlocked: Boolean(isOldTent)
+          };
+        });
+      });
+
+      const folderKeys = Object.keys(catalog);
+      if (!starterAssigned && folderKeys.length > 0 && catalog[folderKeys[0]].length > 0) {
+        catalog[folderKeys[0]][0].unlocked = true;
+      }
+
+      ASSET_CATALOG = catalog;
+      gameState.activeTab = folderKeys[0] || '텐트';
+
+      // 모든 폴더/파일 경로(./camping_asset/폴더명/파일명)의 실제 PNG 이미지 자동 프리로드
+      folderKeys.forEach((folder) => {
+        ASSET_CATALOG[folder].forEach((item) => {
+          const img = new Image();
+          img.onload = () => {
+            loadedItemImages[item.id] = img;
+          };
+          img.src = `./camping_asset/${encodeURIComponent(folder)}/${encodeURIComponent(item.fileName)}`;
+        });
+      });
+    }
+
+    /**
+     * =========================================================================
+     * 전역 게임 상태 관리
+     * =========================================================================
+     */
+    const gameState = {
+      started: false,
+      playerName: '숲속탐험가',
+      selectedChar: 1,
+      keys: 0,
+      activeTab: '텐트',
+      placingItem: null,        // 현재 배치 중인 아이템 객체
+      selectedPlacedUid: null,  // 클릭하여 선택된 배치 아이템 UID
+      mousePos: { x: 0, y: 0, active: false },
+      placedItems: [],          // 캠핑장에 배치된 아이템 목록 { uid, itemId, x, y, scale, zOrder }
+      sparkles: [],             // 전체 화면 '뾰로롱' 파티클 목록
+      soundEnabled: true,
+      starterGiftShown: false
+    };
+
+    // 캐릭터 배회 AI 상태 (캠핑장 내 자유 이동)
+    const camperAI = {
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      dir: 'down',            // 'down' | 'right' | 'left' | 'up'
+      state: 'idle',          // 'idle' | 'walk'
+      timer: 1.5,
+      frameIndex: 0,
+      frameTimer: 0,
+      speed: 68
+    };
+
+    // 캠핑장 울타리(이동 가능 영역) 경계 비율 (화면 크기에 비례 계산)
+    let campBounds = { left: 100, right: 700, top: 120, bottom: 520 };
+
+    /**
+     * =========================================================================
+     * Web Audio API 사운드 합성 ('뾰로롱~♪', 클릭음, 장작 패기 효과음)
+     * =========================================================================
+     */
+    let audioCtx = null;
+
+    function ensureAudioCtx() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleAudio() {
+      gameState.soundEnabled = !gameState.soundEnabled;
+      document.getElementById('btnMuteToggle').textContent = gameState.soundEnabled ? '🔊' : '🔇';
+      if (gameState.soundEnabled) {
+        ensureAudioCtx();
+        playClickSound();
+      }
+    }
+
+    function playClickSound() {
+      if (!gameState.soundEnabled) return;
+      try {
+        ensureAudioCtx();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(780, now + 0.06);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      } catch (e) {}
+    }
+
+    function playChopSound() {
+      if (!gameState.soundEnabled) return;
+      try {
+        ensureAudioCtx();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(190, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.14);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch (e) {}
+    }
+
+    // 아이템 배치 완료 시 맑고 경쾌한 '뾰로롱~♪' 사운드
+    function playPyororongSound() {
+      if (!gameState.soundEnabled) return;
+      try {
+        ensureAudioCtx();
+        if (!audioCtx) return;
+        const notes = [587.33, 739.99, 880.00, 1174.66, 1479.98, 1760.00]; // D5 - F#5 - A5 - D6 - F#6 - A6
+        const now = audioCtx.currentTime;
+
+        notes.forEach((freq, idx) => {
+          const startTime = now + idx * 0.055;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startTime);
+
+          gain.gain.setValueAtTime(0.001, startTime);
+          gain.gain.linearRampToValueAtTime(0.16, startTime + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0008, startTime + 0.35);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.36);
+        });
+      } catch (e) {}
+    }
+
+    /**
+     * =========================================================================
+     * 스프라이트 시트 로더 & 도트 픽셀 오프스크린 폴백(Fallback) 생성기
+     * =========================================================================
+     */
+    const sprites = {
+      bg: null,
+      chars: { 1: null, 2: null, 3: null }
+    };
+
+    function createFallbackBackgroundSheet() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 224;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+
+      // 1) 좌상단 (0,0, 64x64) 잔디 타일
+      ctx.fillStyle = '#5da118';
+      ctx.fillRect(0, 0, 64, 64);
+      ctx.fillStyle = '#488510';
+      const tufts = [[8,10],[22,6],[45,14],[14,32],[36,28],[52,42],[10,52],[28,48],[48,56]];
+      tufts.forEach(([tx, ty]) => {
+        ctx.fillRect(tx, ty, 3, 2);
+        ctx.fillRect(tx + 4, ty + 1, 3, 2);
+      });
+
+      // 2) 나무 3종 (소/중/대 소나무)
+      function drawPineTree(ox, oy, w, h) {
+        ctx.fillStyle = '#5c330a';
+        ctx.fillRect(ox + w / 2 - 4, oy + h - 14, 8, 14);
+        ctx.strokeStyle = '#1b0f04';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(ox + w / 2 - 4, oy + h - 14, 8, 14);
+
+        const tiers = 3;
+        for (let i = 0; i < tiers; i++) {
+          const tw = w * (0.55 + i * 0.22);
+          const th = (h - 12) * 0.48;
+          const ty = oy + i * ((h - 24) / tiers);
+          ctx.fillStyle = i % 2 === 0 ? '#147a14' : '#0f630f';
+          ctx.beginPath();
+          ctx.moveTo(ox + w / 2, ty);
+          ctx.lineTo(ox + w / 2 + tw / 2, ty + th);
+          ctx.lineTo(ox + w / 2 - tw / 2, ty + th);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#072b07';
+          ctx.stroke();
+        }
+      }
+      drawPineTree(130, 14, 30, 50);
+      drawPineTree(164, 14, 38, 76);
+      drawPineTree(206, 4, 46, 90);
+
+      // 3) 덤불
+      ctx.fillStyle = '#198712';
+      ctx.beginPath();
+      ctx.arc(103, 40, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4) 클로버 & 빨간 버섯
+      ctx.fillStyle = '#2d9e19';
+      for (let i = 0; i < 12; i++) {
+        ctx.fillRect(4 + (i % 3) * 10, 68 + Math.floor(i / 3) * 14, 5, 5);
+      }
+      [[38, 86], [52, 84], [44, 102], [56, 104]].forEach(([mx, my]) => {
+        ctx.fillStyle = '#fff5e4';
+        ctx.fillRect(mx - 2, my, 4, 6);
+        ctx.fillStyle = '#d62828';
+        ctx.beginPath();
+        ctx.arc(mx, my, 6, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(mx - 3, my - 4, 2, 2);
+        ctx.fillRect(mx + 1, my - 3, 2, 2);
+      });
+
+      // 5) 캠핑 안내 표지판
+      ctx.fillStyle = '#6b421c';
+      ctx.fillRect(70, 118, 4, 6);
+      ctx.fillRect(86, 118, 4, 6);
+      ctx.fillStyle = '#8c5828';
+      ctx.fillRect(66, 98, 28, 20);
+      ctx.fillStyle = '#74b9ff';
+      ctx.fillRect(69, 101, 22, 14);
+      ctx.fillStyle = '#f6b93b';
+      ctx.beginPath();
+      ctx.moveTo(80, 103);
+      ctx.lineTo(86, 114);
+      ctx.lineTo(74, 114);
+      ctx.closePath();
+      ctx.fill();
+
+      // 6) 통나무 울타리 프레임
+      ctx.fillStyle = '#8c5319';
+      ctx.strokeStyle = '#261404';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 3; i++) {
+        ctx.fillRect(8 + i * 28, 129, 24, 6);
+        ctx.strokeRect(8 + i * 28, 129, 24, 6);
+        ctx.fillRect(8 + i * 28, 215, 24, 6);
+        ctx.strokeRect(8 + i * 28, 215, 24, 6);
+        ctx.fillRect(2, 134 + i * 28, 5, 24);
+        ctx.strokeRect(2, 134 + i * 28, 5, 24);
+        ctx.fillRect(89, 134 + i * 28, 5, 24);
+        ctx.strokeRect(89, 134 + i * 28, 5, 24);
+      }
+
+      // 7) 둥근 모서리 모래/흙 캠핑 구역 타일
+      ctx.fillStyle = '#a88454';
+      ctx.beginPath();
+      ctx.roundRect(99, 131, 88, 88, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#87663b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      return c;
+    }
+
+    function createFallbackCharacterSheet(charId) {
+      const c = document.createElement('canvas');
+      c.width = 192;
+      c.height = 192;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+
+      const palettes = {
+        1: { hair: '#3d3b40', shirt: '#009688', vest: '#ff6d00', pants: '#3b5998' },
+        2: { hair: '#ff7b00', shirt: '#ffffff', vest: '#f5f6fa', pants: '#b5651d' },
+        3: { hair: '#2f3542', shirt: '#273c75', vest: '#fbc531', pants: '#192a56' }
+      };
+      const pal = palettes[charId] || palettes[1];
+
+      for (let row = 0; row < 6; row++) {
+        const cols = (row % 2 === 0) ? 2 : 6;
+        for (let col = 0; col < cols; col++) {
+          const ox = col * 32;
+          const oy = row * 32;
+          const bob = (row % 2 === 1 && col % 2 === 1) ? -1 : 0;
+          const step = (row % 2 === 1) ? Math.sin((col / 6) * Math.PI * 2) * 2 : 0;
+
+          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          ctx.beginPath();
+          ctx.ellipse(ox + 16, oy + 29, 7, 2.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = pal.pants;
+          ctx.fillRect(ox + 11, oy + 21 + bob, 4, 6 + (step > 0 ? -1 : 0));
+          ctx.fillRect(ox + 17, oy + 21 + bob, 4, 6 + (step < 0 ? -1 : 0));
+          ctx.fillStyle = '#3d2314';
+          ctx.fillRect(ox + 11, oy + 26 + bob, 4, 2);
+          ctx.fillRect(ox + 17, oy + 26 + bob, 4, 2);
+
+          ctx.fillStyle = pal.shirt;
+          ctx.fillRect(ox + 10, oy + 14 + bob, 12, 8);
+          if (charId === 1) {
+            ctx.fillStyle = pal.vest;
+            ctx.fillRect(ox + 12, oy + 14 + bob, 8, 8);
+          } else if (charId === 3) {
+            ctx.fillStyle = pal.vest;
+            ctx.fillRect(ox + 14, oy + 14 + bob, 4, 2);
+          }
+
+          ctx.fillStyle = '#ffcca3';
+          ctx.fillRect(ox + 8, oy + 15 + bob - step * 0.5, 2, 5);
+          ctx.fillRect(ox + 22, oy + 15 + bob + step * 0.5, 2, 5);
+
+          ctx.fillStyle = '#ffcca3';
+          ctx.fillRect(ox + 10, oy + 5 + bob, 12, 9);
+
+          ctx.fillStyle = pal.hair;
+          if (row >= 4) {
+            ctx.fillRect(ox + 9, oy + 3 + bob, 14, 11);
+          } else {
+            ctx.fillRect(ox + 9, oy + 3 + bob, 14, 4);
+            ctx.fillRect(ox + 9, oy + 5 + bob, 2, 5);
+            ctx.fillRect(ox + 21, oy + 5 + bob, 2, 5);
+            if (charId === 2) {
+              ctx.fillRect(ox + 8, oy + 7 + bob, 3, 7);
+              ctx.fillRect(ox + 21, oy + 7 + bob, 3, 7);
+            }
+            ctx.fillStyle = '#1e272e';
+            if (row <= 1) {
+              ctx.fillRect(ox + 12, oy + 9 + bob, 2, 2);
+              ctx.fillRect(ox + 18, oy + 9 + bob, 2, 2);
+            } else {
+              ctx.fillRect(ox + 18, oy + 9 + bob, 2, 2);
+            }
+          }
+        }
+      }
+      return c;
+    }
+
+    function loadImageWithFallback(src, fallbackFactory, callback) {
+      const img = new Image();
+      img.onload = () => callback(img);
+      img.onerror = () => callback(fallbackFactory());
+      img.src = src;
+    }
+
+    function initAllSprites(onReady) {
+      let loadedCount = 0;
+      const checkDone = () => {
+        loadedCount++;
+        if (loadedCount === 4 && onReady) onReady();
+      };
+
+      loadImageWithFallback('background.png', createFallbackBackgroundSheet, (res) => {
+        sprites.bg = res;
+        checkDone();
+      });
+
+      [1, 2, 3].forEach((id) => {
+        loadImageWithFallback(`character${id}.png`, () => createFallbackCharacterSheet(id), (res) => {
+          sprites.chars[id] = res;
+          checkDone();
+        });
+      });
+    }
+
+    /**
+     * =========================================================================
+     * 아이템 렌더러 (실제 PNG 이미지 원본 도트 픽셀 비율 100% 유지)
+     * =========================================================================
+     */
+    function drawItemVisual(ctx, itemOrId, cx, cy, scale = 1, alpha = 1) {
+      const itemObj = typeof itemOrId === 'string' ? findItemById(itemOrId) : itemOrId;
+      const itemId = itemObj ? itemObj.id : itemOrId;
+      const realImg = loadedItemImages[itemId];
+
+      if (realImg && realImg.complete && realImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(scale, scale);
+        ctx.globalAlpha = alpha;
+        ctx.imageSmoothingEnabled = false;
+
+        const nw = realImg.naturalWidth;
+        const nh = realImg.naturalHeight;
+        const baseFactor = 1.65;
+        const dw = nw * baseFactor;
+        const dh = nh * baseFactor;
+
+        ctx.fillStyle = 'rgba(25, 18, 8, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(0, dh * 0.35, Math.max(14, dw * 0.32), 6.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.drawImage(realImg, -dw / 2, -dh * 0.65, dw, dh);
+        ctx.restore();
+        return;
+      }
+
+      const fallbackKey = (itemObj && itemObj.fallbackType) ? itemObj.fallbackType : itemId;
+      drawFallbackPixelArt(ctx, fallbackKey, cx, cy, scale, alpha);
+    }
+
+    function drawFallbackPixelArt(ctx, itemId, cx, cy, scale = 1, alpha = 1) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = alpha;
+      ctx.imageSmoothingEnabled = false;
+
+      ctx.fillStyle = 'rgba(25, 18, 8, 0.24)';
+      ctx.beginPath();
+      ctx.ellipse(0, 18, 28, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      switch (itemId) {
+        case 'tent_old': {
+          ctx.fillStyle = '#8b6f47';
+          ctx.beginPath();
+          ctx.moveTo(-34, 18);
+          ctx.lineTo(0, -26);
+          ctx.lineTo(34, 18);
+          ctx.closePath();
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#2b180c';
+          ctx.stroke();
+
+          ctx.fillStyle = '#b5986b';
+          ctx.beginPath();
+          ctx.moveTo(-24, 18);
+          ctx.lineTo(0, -26);
+          ctx.lineTo(24, 18);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#3b2818';
+          ctx.beginPath();
+          ctx.moveTo(-11, 18);
+          ctx.lineTo(0, -5);
+          ctx.lineTo(11, 18);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = '#d35400';
+          ctx.fillRect(-19, 3, 7, 7);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-19, 3, 7, 7);
+
+          ctx.fillStyle = '#6ab04c';
+          ctx.fillRect(11, -2, 6, 6);
+          ctx.strokeRect(11, -2, 6, 6);
+          break;
+        }
+
+        case 'tent_triangle': {
+          ctx.fillStyle = '#e67e22';
+          ctx.beginPath();
+          ctx.moveTo(-38, 18);
+          ctx.lineTo(-8, -28);
+          ctx.lineTo(26, -28);
+          ctx.lineTo(38, 18);
+          ctx.closePath();
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#2b180c';
+          ctx.stroke();
+
+          ctx.fillStyle = '#f39c12';
+          ctx.beginPath();
+          ctx.moveTo(-38, 18);
+          ctx.lineTo(-8, -28);
+          ctx.lineTo(14, 18);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#2c1e12';
+          ctx.beginPath();
+          ctx.moveTo(-22, 18);
+          ctx.lineTo(-8, -6);
+          ctx.lineTo(4, 18);
+          ctx.closePath();
+          ctx.fill();
+          break;
+        }
+
+        case 'tent_dome': {
+          ctx.fillStyle = '#48dbfb';
+          ctx.beginPath();
+          ctx.arc(0, 16, 34, Math.PI, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#2b180c';
+          ctx.stroke();
+
+          ctx.fillStyle = '#0abde3';
+          ctx.beginPath();
+          ctx.arc(0, 16, 20, Math.PI, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#ff9f43';
+          ctx.fillRect(-10, 4, 20, 12);
+          ctx.strokeRect(-10, 4, 20, 12);
+          break;
+        }
+
+        case 'tent_tarp': {
+          ctx.strokeStyle = '#5c3a21';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-26, -14);
+          ctx.lineTo(-26, 20);
+          ctx.moveTo(26, -14);
+          ctx.lineTo(26, 20);
+          ctx.stroke();
+
+          ctx.fillStyle = '#f5deb3';
+          ctx.beginPath();
+          ctx.moveTo(-42, 2);
+          ctx.lineTo(-26, -18);
+          ctx.lineTo(26, -18);
+          ctx.lineTo(42, 2);
+          ctx.lineTo(0, -6);
+          ctx.closePath();
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#2b180c';
+          ctx.stroke();
+          break;
+        }
+
+        case 'fire_pit': {
+          const stones = [[-16,14],[-8,18],[0,19],[8,18],[16,14],[-12,10],[12,10]];
+          stones.forEach(([sx, sy]) => {
+            ctx.fillStyle = '#7f8c8d';
+            ctx.beginPath();
+            ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#2b180c';
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+          });
+          ctx.fillStyle = '#6e3b17';
+          ctx.fillRect(-10, 8, 20, 5);
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.moveTo(-10, 10);
+          ctx.quadraticCurveTo(-12, -8, 0, -18);
+          ctx.quadraticCurveTo(12, -8, 10, 10);
+          ctx.fill();
+          ctx.fillStyle = '#f1c40f';
+          ctx.beginPath();
+          ctx.moveTo(-5, 10);
+          ctx.quadraticCurveTo(-5, -2, 0, -9);
+          ctx.quadraticCurveTo(5, -2, 5, 10);
+          ctx.fill();
+          break;
+        }
+
+        case 'lantern_stand': {
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-6, 20);
+          ctx.lineTo(-6, -24);
+          ctx.quadraticCurveTo(-6, -30, 6, -26);
+          ctx.stroke();
+          ctx.fillStyle = '#f9ca24';
+          ctx.fillRect(1, -20, 10, 12);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(1, -20, 10, 12);
+          ctx.fillStyle = '#c0392b';
+          ctx.fillRect(-1, -23, 14, 3);
+          break;
+        }
+
+        case 'string_lights': {
+          ctx.strokeStyle = '#4a2e1b';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-34, 20);
+          ctx.lineTo(-34, -22);
+          ctx.moveTo(34, 20);
+          ctx.lineTo(34, -22);
+          ctx.stroke();
+
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-34, -20);
+          ctx.quadraticCurveTo(0, -6, 34, -20);
+          ctx.stroke();
+
+          const bulbColors = ['#ff7675', '#ffeaa7', '#74b9ff', '#55efc4', '#fdcb6e'];
+          [-22, -11, 0, 11, 22].forEach((bx, idx) => {
+            const by = -14 + (1 - Math.abs(bx) / 34) * 5;
+            ctx.fillStyle = bulbColors[idx];
+            ctx.beginPath();
+            ctx.arc(bx, by, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          });
+          break;
+        }
+
+        case 'torch_lamp': {
+          ctx.fillStyle = '#6ab04c';
+          ctx.fillRect(-3, -10, 6, 30);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-3, -10, 6, 30);
+          ctx.fillStyle = '#ff793f';
+          ctx.beginPath();
+          ctx.arc(0, -16, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffda79';
+          ctx.beginPath();
+          ctx.arc(0, -15, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+
+        case 'chair_wood': {
+          ctx.strokeStyle = '#5c3a21';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-12, 20);
+          ctx.lineTo(10, -4);
+          ctx.moveTo(12, 20);
+          ctx.lineTo(-10, -4);
+          ctx.stroke();
+
+          ctx.fillStyle = '#e17055';
+          ctx.fillRect(-13, -14, 26, 12);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-13, -14, 26, 12);
+          ctx.fillRect(-13, 3, 26, 6);
+          ctx.strokeRect(-13, 3, 26, 6);
+          break;
+        }
+
+        case 'table_roll': {
+          ctx.strokeStyle = '#4a2e1b';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-20, 4);
+          ctx.lineTo(-20, 20);
+          ctx.moveTo(20, 4);
+          ctx.lineTo(20, 20);
+          ctx.stroke();
+
+          ctx.fillStyle = '#cd853f';
+          ctx.fillRect(-26, -4, 52, 9);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-26, -4, 52, 9);
+          break;
+        }
+
+        case 'hammock': {
+          ctx.strokeStyle = '#5c3a21';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(-36, 18);
+          ctx.lineTo(-30, -10);
+          ctx.moveTo(36, 18);
+          ctx.lineTo(30, -10);
+          ctx.stroke();
+
+          ctx.fillStyle = '#ff9ff3';
+          ctx.beginPath();
+          ctx.moveTo(-30, -8);
+          ctx.quadraticCurveTo(0, 16, 30, -8);
+          ctx.quadraticCurveTo(0, 6, -30, -8);
+          ctx.fill();
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          break;
+        }
+
+        case 'log_bench': {
+          ctx.fillStyle = '#6e3b17';
+          ctx.fillRect(-22, 8, 6, 11);
+          ctx.fillRect(16, 8, 6, 11);
+          ctx.fillStyle = '#a0522d';
+          ctx.beginPath();
+          ctx.roundRect(-28, 0, 56, 11, 5);
+          ctx.fill();
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          break;
+        }
+
+        case 'kettle_stove': {
+          ctx.fillStyle = '#636e72';
+          ctx.fillRect(-12, 8, 24, 10);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-12, 8, 24, 10);
+
+          ctx.fillStyle = '#dfe6e9';
+          ctx.beginPath();
+          ctx.arc(0, 1, 9, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#d63031';
+          ctx.fillRect(-4, -10, 8, 3);
+          break;
+        }
+
+        case 'cooler_box': {
+          ctx.fillStyle = '#eb4d4b';
+          ctx.fillRect(-16, -2, 32, 20);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-16, -2, 32, 20);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-17, -7, 34, 6);
+          ctx.strokeRect(-17, -7, 34, 6);
+          break;
+        }
+
+        case 'picnic_basket': {
+          ctx.strokeStyle = '#8c5830';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 12, Math.PI, 0);
+          ctx.stroke();
+
+          ctx.fillStyle = '#e1b12c';
+          ctx.fillRect(-14, 0, 28, 17);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-14, 0, 28, 17);
+          ctx.fillStyle = '#e84118';
+          ctx.fillRect(-12, 1, 24, 3);
+          break;
+        }
+
+        case 'guitar_wood': {
+          ctx.fillStyle = '#e58e26';
+          ctx.beginPath();
+          ctx.arc(0, 10, 10, 0, Math.PI * 2);
+          ctx.arc(0, 0, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = '#4a2e1b';
+          ctx.fillRect(-2, -20, 4, 15);
+          ctx.fillStyle = '#2b180c';
+          ctx.beginPath();
+          ctx.arc(0, 8, 3, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+
+        case 'wood_pile': {
+          const logs = [[-12,14],[0,14],[12,14],[-6,6],[6,6],[0,-2]];
+          logs.forEach(([lx, ly]) => {
+            ctx.fillStyle = '#a66e44';
+            ctx.beginPath();
+            ctx.arc(lx, ly, 5.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#2b180c';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#f5deb3';
+            ctx.beginPath();
+            ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          break;
+        }
+
+        case 'flower_patch': {
+          ctx.fillStyle = '#44bd32';
+          ctx.beginPath();
+          ctx.ellipse(0, 12, 22, 9, 0, 0, Math.PI * 2);
+          ctx.fill();
+          const flw = [[-12,8,'#fbc531'],[-2,5,'#ff6b81'],[10,9,'#ffffff'],[3,13,'#ff9ff3']];
+          flw.forEach(([fx, fy, col]) => {
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            ctx.arc(fx, fy, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#e67e22';
+            ctx.fillRect(fx - 1, fy - 1, 2, 2);
+          });
+          break;
+        }
+
+        case 'camp_sign': {
+          ctx.fillStyle = '#5c3a21';
+          ctx.fillRect(-3, -14, 6, 34);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-3, -14, 6, 34);
+
+          ctx.fillStyle = '#cd853f';
+          ctx.beginPath();
+          ctx.moveTo(-16, -12);
+          ctx.lineTo(12, -12);
+          ctx.lineTo(18, -6);
+          ctx.lineTo(12, 0);
+          ctx.lineTo(-16, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+
+        case 'stump_mushroom': {
+          ctx.fillStyle = '#8c5830';
+          ctx.fillRect(-12, 2, 24, 16);
+          ctx.strokeStyle = '#2b180c';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-12, 2, 24, 16);
+          ctx.fillStyle = '#f5deb3';
+          ctx.beginPath();
+          ctx.ellipse(0, 2, 12, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(6, -4, 4, 6);
+          ctx.fillStyle = '#e84118';
+          ctx.beginPath();
+          ctx.arc(8, -5, 6, Math.PI, 0);
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function findItemById(id) {
+      for (const folder of Object.keys(ASSET_CATALOG)) {
+        const found = ASSET_CATALOG[folder].find((it) => it.id === id);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function getStarterGiftItem() {
+      for (const folder of Object.keys(ASSET_CATALOG)) {
+        const unlocked = ASSET_CATALOG[folder].find((it) => it.unlocked);
+        if (unlocked) return unlocked;
+      }
+      const firstFolder = Object.keys(ASSET_CATALOG)[0];
+      return firstFolder ? ASSET_CATALOG[firstFolder][0] : null;
+    }
+
+    const RANDOM_NICKNAMES = [
+      '솔방울캠퍼', '달빛모닥불', '별헤는밤', '숲속다람쥐',
+      '도토리탐험가', '은하수텐트', '산들바람', '낭만백패커', '캠핑요정'
+    ];
+
+    function randomizeNickname() {
+      playClickSound();
+      const input = document.getElementById('playerNameInput');
+      const pick = RANDOM_NICKNAMES[Math.floor(Math.random() * RANDOM_NICKNAMES.length)];
+      input.value = pick;
+    }
+
+    function selectCharacter(id) {
+      playClickSound();
+      gameState.selectedChar = id;
+      [1, 2, 3].forEach((cid) => {
+        const card = document.getElementById(`charCard${cid}`);
+        if (cid === id) card.classList.add('selected');
+        else card.classList.remove('selected');
+      });
+    }
+
+    function enterCampsite() {
+      ensureAudioCtx();
+      playClickSound();
+
+      const rawName = document.getElementById('playerNameInput').value.trim();
+      gameState.playerName = rawName || '숲속탐험가';
+      gameState.started = true;
+
+      document.getElementById('hudCampTitle').textContent = `${gameState.playerName}의 캠핑장`;
+      document.getElementById('welcomeUserName').textContent = gameState.playerName;
+
+      document.getElementById('entryScreen').classList.add('hidden');
+      document.getElementById('hudLayer').classList.remove('hidden');
+
+      camperAI.x = (campBounds.left + campBounds.right) / 2;
+      camperAI.y = (campBounds.top + campBounds.bottom) / 2 + 20;
+
+      if (!gameState.starterGiftShown) {
+        gameState.starterGiftShown = true;
+        const starterItem = getStarterGiftItem();
+        if (starterItem) {
+          const giftCanvas = document.getElementById('giftItemPreview');
+          const gCtx = giftCanvas.getContext('2d');
+          gCtx.clearRect(0, 0, giftCanvas.width, giftCanvas.height);
+          drawItemVisual(gCtx, starterItem, 44, 48, 1.0, 1);
+          document.getElementById('giftItemLabel').textContent = `${starterItem.name} (기본)`;
+        }
+        document.getElementById('welcomeGiftModal').classList.remove('hidden');
+      }
+    }
+
+    function acceptStarterGift() {
+      playPyororongSound();
+      document.getElementById('welcomeGiftModal').classList.add('hidden');
+      const starterTent = getStarterGiftItem();
+      if (starterTent) startPlacementMode(starterTent);
+    }
+
+    /**
+     * =========================================================================
+     * 인벤토리 모달 (폴더명 탭 + 잠금/열쇠 해제 + 배치 전환)
+     * =========================================================================
+     */
+    function updateKeyUI() {
+      document.getElementById('invKeyCount').textContent = gameState.keys;
+      const badge = document.getElementById('hudKeyBadge');
+      if (gameState.keys > 0) {
+        badge.textContent = `🔑 ${gameState.keys}`;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function openInventoryModal() {
+      playClickSound();
+      updateKeyUI();
+      renderInventoryTabs();
+      renderInventoryGrid();
+      document.getElementById('inventoryModal').classList.remove('hidden');
+    }
+
+    function closeInventoryModal() {
+      playClickSound();
+      document.getElementById('inventoryModal').classList.add('hidden');
+    }
+
+    function renderInventoryTabs() {
+      const tabContainer = document.getElementById('inventoryTabs');
+      tabContainer.innerHTML = '';
+      const folders = Object.keys(ASSET_CATALOG);
+
+      folders.forEach((folderName) => {
+        const isActive = gameState.activeTab === folderName;
+        const unlockedCount = ASSET_CATALOG[folderName].filter((i) => i.unlocked).length;
+        const totalCount = ASSET_CATALOG[folderName].length;
+
+        const btn = document.createElement('button');
+        btn.className = isActive
+          ? 'px-3.5 py-2 rounded-t-xl border-3 border-b-0 border-[#2b180c] bg-[#fdf5e6] text-[#2b180c] font-bold text-xs sm:text-sm whitespace-nowrap flex items-center gap-1.5 shadow-sm'
+          : 'px-3.5 py-2 rounded-t-xl border-2 border-b-0 border-[#bfa37a] bg-[#dec69e] text-[#5c3a21] hover:bg-[#e8d3b0] text-xs sm:text-sm whitespace-nowrap flex items-center gap-1.5';
+
+        btn.innerHTML = `
+          <span>📁 ${folderName}</span>
+          <span class="text-[11px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-[#f6b93b] text-[#2b180c]' : 'bg-[#cbb28c] text-[#4a2e1b]'}">
+            ${unlockedCount}/${totalCount}
+          </span>
+        `;
+        btn.onclick = () => {
+          playClickSound();
+          gameState.activeTab = folderName;
+          renderInventoryTabs();
+          renderInventoryGrid();
+        };
+        tabContainer.appendChild(btn);
+      });
+    }
+
+    function renderInventoryGrid() {
+      const grid = document.getElementById('inventoryGrid');
+      grid.innerHTML = '';
+      const items = ASSET_CATALOG[gameState.activeTab] || [];
+
+      items.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = item.unlocked
+          ? 'bg-[#fffaf0] border-3 border-[#2b180c] rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#fff3d1] hover:-translate-y-0.5 transition shadow-sm'
+          : 'bg-[#e5dccb] border-2 border-[#a8987c] rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer relative overflow-hidden hover:border-[#74492b] transition';
+
+        const previewWrap = document.createElement('div');
+        previewWrap.className = 'w-20 h-20 rounded-xl bg-[#e8f3dc] border-2 border-[#b5cfa0] flex items-center justify-center relative mb-2';
+
+        const pCanvas = document.createElement('canvas');
+        pCanvas.width = 80;
+        pCanvas.height = 80;
+        const pCtx = pCanvas.getContext('2d');
+        drawItemVisual(pCtx, item, 40, 44, 0.9, item.unlocked ? 1 : 0.35);
+        previewWrap.appendChild(pCanvas);
+
+        if (!item.unlocked) {
+          const lockOverlay = document.createElement('div');
+          lockOverlay.className = 'absolute inset-0 bg-[#2b180c]/45 rounded-lg flex flex-col items-center justify-center text-white';
+          lockOverlay.innerHTML = `
+            <span class="text-2xl drop-shadow">🔒</span>
+            <span class="text-[10px] font-bold bg-[#2b180c]/80 px-1.5 py-0.5 rounded mt-0.5">🔑 1개 필요</span>
+          `;
+          previewWrap.appendChild(lockOverlay);
+        }
+
+        card.appendChild(previewWrap);
+
+        const titleEl = document.createElement('div');
+        titleEl.className = `text-sm font-bold ${item.unlocked ? 'text-[#2b180c]' : 'text-[#6e5d46]'}`;
+        titleEl.textContent = item.name;
+        card.appendChild(titleEl);
+
+        const subEl = document.createElement('div');
+        subEl.className = 'text-[11px] text-[#74492b] mt-0.5 line-clamp-1';
+        subEl.textContent = item.unlocked ? '클릭하여 배치하기' : '잠금 상태';
+        card.appendChild(subEl);
+
+        card.onclick = () => handleInventoryItemClick(item);
+        grid.appendChild(card);
+      });
+    }
+
+    function handleInventoryItemClick(item) {
+      if (item.unlocked) {
+        playClickSound();
+        document.getElementById('inventoryModal').classList.add('hidden');
+        startPlacementMode(item);
+      } else {
+        if (gameState.keys >= 1) {
+          gameState.keys -= 1;
+          item.unlocked = true;
+          updateKeyUI();
+          playPyororongSound();
+          renderInventoryTabs();
+          renderInventoryGrid();
+          showToast(`✨ [${item.name}] 잠금 해제 완료! 클릭해서 배치해보세요.`);
+        } else {
+          playClickSound();
+          document.getElementById('lockedItemTitle').textContent = item.name;
+          document.getElementById('needKeyModal').classList.remove('hidden');
+        }
+      }
+    }
+
+    function closeNeedKeyModal() {
+      playClickSound();
+      document.getElementById('needKeyModal').classList.add('hidden');
+    }
+
+    function goToGameFromAlert() {
+      closeNeedKeyModal();
+      document.getElementById('inventoryModal').classList.add('hidden');
+      openMinigameModal();
+    }
+
+    /**
+     * =========================================================================
+     * 미니게임 & 친구 & 관리 모달 제어
+     * =========================================================================
+     */
+    function openMinigameModal() {
+      playClickSound();
+      startCustomMinigame();
+      document.getElementById('minigameModal').classList.remove('hidden');
+    }
+
+    function closeMinigameModal() {
+      playClickSound();
+      document.getElementById('minigameModal').classList.add('hidden');
+    }
+
+    function openFriendsModal() {
+      playClickSound();
+      document.getElementById('friendsModal').classList.remove('hidden');
+    }
+
+    function closeFriendsModal() {
+      playClickSound();
+      document.getElementById('friendsModal').classList.add('hidden');
+    }
+
+    function sendFriendHeart(btn, friendName) {
+      playPyororongSound();
+      btn.textContent = '💖 전송됨!';
+      btn.disabled = true;
+      showToast(`💌 ${friendName}님에게 캠핑 좋아요를 보냈어요!`);
+    }
+
+    function openResetConfirm() {
+      if (gameState.placedItems.length === 0) {
+        showToast('치울 아이템이 아직 없어요!');
+        return;
+      }
+      playClickSound();
+      document.getElementById('resetConfirmModal').classList.remove('hidden');
+    }
+
+    function closeResetConfirm() {
+      playClickSound();
+      document.getElementById('resetConfirmModal').classList.add('hidden');
+    }
+
+    function confirmClearAllPlaced() {
+      playClickSound();
+      gameState.placedItems = [];
+      updatePlacedCount();
+      closeResetConfirm();
+      showToast('🧹 캠핑장의 모든 아이템을 깔끔하게 치웠어요!');
+    }
+
+    function undoLastPlaced() {
+      if (gameState.placedItems.length === 0) {
+        showToast('회수할 아이템이 없어요!');
+        return;
+      }
+      playClickSound();
+      const removed = gameState.placedItems.pop();
+      const meta = findItemById(removed.itemId);
+      updatePlacedCount();
+      showToast(`↩️ [${meta ? meta.name : '아이템'}] 배치를 회수했어요.`);
+    }
+
+    function updatePlacedCount() {
+      document.getElementById('placedCountText').textContent = gameState.placedItems.length;
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const banner = document.getElementById('toastBanner');
+      banner.textContent = msg;
+      banner.classList.remove('hidden');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 2600);
+    }
+
+    /**
+     * =========================================================================
+     * 아이템 배치 모드 & 전체 화면 '반짝이는 뾰로롱' 파티클 시스템
+     * =========================================================================
+     */
+    function startPlacementMode(item) {
+      gameState.placingItem = item;
+      document.getElementById('placingItemName').textContent = item.name;
+      document.getElementById('placementBanner').classList.remove('hidden');
+      document.getElementById('bottomToolbar').classList.add('hidden');
+    }
+
+    function cancelPlacement() {
+      playClickSound();
+      gameState.placingItem = null;
+      document.getElementById('placementBanner').classList.add('hidden');
+      document.getElementById('bottomToolbar').classList.remove('hidden');
+    }
+
+    function triggerFullScreenSparkles(originX, originY) {
+      const colors = ['#fff200', '#fffa65', '#ff9ff3', '#7bed9f', '#70a1ff', '#ffffff', '#ffbe76'];
+
+      for (let i = 0; i < 42; i++) {
+        const angle = (Math.PI * 2 * i) / 42 + Math.random() * 0.3;
+        const speed = 40 + Math.random() * 190;
+        gameState.sparkles.push({
+          x: originX,
+          y: originY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 35,
+          size: 4 + Math.random() * 7,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1.0,
+          decay: 0.75 + Math.random() * 0.55,
+          shape: i % 2 === 0 ? 'star' : 'diamond'
+        });
+      }
+
+      for (let i = 0; i < 65; i++) {
+        gameState.sparkles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 45,
+          vy: -25 - Math.random() * 65,
+          size: 4 + Math.random() * 8,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1.0,
+          decay: 0.65 + Math.random() * 0.5,
+          shape: Math.random() > 0.4 ? 'star' : 'circle'
+        });
+      }
+    }
+
+    function updateAndDrawSparkles(ctx, dt) {
+      for (let i = gameState.sparkles.length - 1; i >= 0; i--) {
+        const p = gameState.sparkles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 45 * dt;
+        p.life -= p.decay * dt;
+
+        if (p.life <= 0) {
+          gameState.sparkles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.translate(p.x, p.y);
+
+        const s = p.size * (0.6 + Math.sin(p.life * 14) * 0.35);
+        if (p.shape === 'star') {
+          ctx.beginPath();
+          ctx.moveTo(0, -s * 1.5);
+          ctx.lineTo(s * 0.35, -s * 0.35);
+          ctx.lineTo(s * 1.5, 0);
+          ctx.lineTo(s * 0.35, s * 0.35);
+          ctx.lineTo(0, s * 1.5);
+          ctx.lineTo(-s * 0.35, s * 0.35);
+          ctx.lineTo(-s * 1.5, 0);
+          ctx.lineTo(-s * 0.35, -s * 0.35);
+          ctx.closePath();
+          ctx.fill();
+        } else if (p.shape === 'diamond') {
+          ctx.rotate(Math.PI / 4);
+          ctx.fillRect(-s / 2, -s / 2, s, s);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, s * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 메인 Canvas 렌더링 & 캐릭터 배회 AI 업데이트
+     * =========================================================================
+     */
+    const canvas = document.getElementById('campCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const padX = Math.max(48, Math.min(130, canvas.width * 0.11));
+      const padTop = Math.max(115, canvas.height * 0.19);
+      const padBottom = Math.max(85, canvas.height * 0.14);
+
+      campBounds = {
+        left: padX,
+        right: canvas.width - padX,
+        top: padTop,
+        bottom: canvas.height - padBottom
+      };
+
+      if (camperAI.x === 0 && camperAI.y === 0) {
+        camperAI.x = canvas.width / 2;
+        camperAI.y = canvas.height / 2 + 20;
+      } else {
+        camperAI.x = Math.max(campBounds.left + 20, Math.min(campBounds.right - 20, camperAI.x));
+        camperAI.y = Math.max(campBounds.top + 20, Math.min(campBounds.bottom - 20, camperAI.y));
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function getPointerPos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+      const pos = getPointerPos(e);
+      gameState.mousePos = { x: pos.x, y: pos.y, active: true };
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      const pos = getPointerPos(e);
+      gameState.mousePos = { x: pos.x, y: pos.y, active: true };
+    }, { passive: true });
+
+    canvas.addEventListener('click', (e) => {
+      if (!gameState.started) return;
+      const pos = getPointerPos(e);
+
+      if (gameState.placingItem) {
+        const placeX = Math.max(campBounds.left + 24, Math.min(campBounds.right - 24, pos.x));
+        const placeY = Math.max(campBounds.top + 20, Math.min(campBounds.bottom - 16, pos.y));
+
+        const placedItem = gameState.placingItem;
+        gameState.placedItems.push({
+          uid: Date.now() + Math.random(),
+          itemId: placedItem.id,
+          x: placeX,
+          y: placeY,
+          scale: 1.05,
+          zOrder: 0
+        });
+
+        updatePlacedCount();
+
+        playPyororongSound();
+        triggerFullScreenSparkles(placeX, placeY);
+
+        gameState.placingItem = null;
+        document.getElementById('placementBanner').classList.add('hidden');
+        document.getElementById('bottomToolbar').classList.remove('hidden');
+        showToast(`✨ [${placedItem.name}] 배치가 완료되었습니다!`);
+        return;
+      }
+
+      for (let i = gameState.placedItems.length - 1; i >= 0; i--) {
+        const p = gameState.placedItems[i];
+        if (Math.abs(pos.x - p.x) <= 34 && Math.abs(pos.y - p.y) <= 34) {
+          playClickSound();
+          gameState.selectedPlacedUid = p.uid;
+          const meta = findItemById(p.itemId);
+          document.getElementById('selectedPlacedTitle').textContent = meta ? meta.name : '배치된 아이템';
+          document.getElementById('placedActionModal').classList.remove('hidden');
+          return;
+        }
+      }
+    });
+
+    function closePlacedActionModal() {
+      gameState.selectedPlacedUid = null;
+      document.getElementById('placedActionModal').classList.add('hidden');
+    }
+
+    function moveSelectedPlacedItem() {
+      const idx = gameState.placedItems.findIndex((it) => it.uid === gameState.selectedPlacedUid);
+      if (idx === -1) {
+        closePlacedActionModal();
+        return;
+      }
+      const [target] = gameState.placedItems.splice(idx, 1);
+      updatePlacedCount();
+      closePlacedActionModal();
+
+      const meta = findItemById(target.itemId);
+      if (meta) {
+        startPlacementMode(meta);
+      }
+    }
+
+    function sendSelectedPlacedItemToBack() {
+      const idx = gameState.placedItems.findIndex((it) => it.uid === gameState.selectedPlacedUid);
+      if (idx === -1) {
+        closePlacedActionModal();
+        return;
+      }
+      const [target] = gameState.placedItems.splice(idx, 1);
+      const minZ = gameState.placedItems.reduce((acc, it) => Math.min(acc, it.zOrder || 0), 0);
+      target.zOrder = minZ - 1;
+      gameState.placedItems.unshift(target);
+
+      const meta = findItemById(target.itemId);
+      closePlacedActionModal();
+      playClickSound();
+      showToast(`⬇️ [${meta ? meta.name : '아이템'}]을(를) 가장 맨 뒤로 보냈습니다.`);
+    }
+
+    function removeSelectedPlacedItem() {
+      const idx = gameState.placedItems.findIndex((it) => it.uid === gameState.selectedPlacedUid);
+      if (idx === -1) {
+        closePlacedActionModal();
+        return;
+      }
+      const [target] = gameState.placedItems.splice(idx, 1);
+      const meta = findItemById(target.itemId);
+      updatePlacedCount();
+      closePlacedActionModal();
+      playClickSound();
+      showToast(`🎒 [${meta ? meta.name : '아이템'}]을(를) 인벤토리로 회수했습니다.`);
+    }
+
+    function renderCampsiteBackground(ctx) {
+      const W = canvas.width;
+      const H = canvas.height;
+      const bgImg = sprites.bg;
+
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+
+      if (bgImg) {
+        const sw = bgImg.width || 256;
+        const sh = bgImg.height || 224;
+        const grassSrcW = Math.floor(sw * (64 / 256));
+        const grassSrcH = Math.floor(sh * (64 / 224));
+        const tileSize = 96;
+
+        for (let gx = 0; gx < W; gx += tileSize) {
+          for (let gy = 0; gy < H; gy += tileSize) {
+            ctx.drawImage(bgImg, 0, 0, grassSrcW, grassSrcH, gx, gy, tileSize, tileSize);
+          }
+        }
+      } else {
+        ctx.fillStyle = '#5da118';
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      const campW = campBounds.right - campBounds.left;
+      const campH = campBounds.bottom - campBounds.top;
+
+      ctx.save();
+      ctx.fillStyle = '#b58d58';
+      ctx.beginPath();
+      ctx.roundRect(campBounds.left, campBounds.top, campW, campH, 24);
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#876336';
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(120, 82, 38, 0.16)';
+      for (let i = 0; i < 24; i++) {
+        const px = campBounds.left + 25 + ((i * 97) % Math.max(40, campW - 50));
+        const py = campBounds.top + 25 + ((i * 61) % Math.max(40, campH - 50));
+        ctx.fillRect(px, py, 6, 4);
+      }
+      ctx.restore();
+
+      drawLogFenceBorder(ctx, campBounds.left - 8, campBounds.top - 8, campW + 16, campH + 16);
+
+      if (bgImg) {
+        const sw = bgImg.width || 256;
+        const sh = bgImg.height || 224;
+        const scaleX = sw / 256;
+        const scaleY = sh / 224;
+
+        const treePositions = [
+          { x: 18, y: 12, type: 'big' },
+          { x: 72, y: 24, type: 'mid' },
+          { x: W - 95, y: 14, type: 'big' },
+          { x: W - 150, y: 28, type: 'small' },
+          { x: 22, y: H - 125, type: 'mid' },
+          { x: W - 90, y: H - 130, type: 'big' }
+        ];
+
+        treePositions.forEach((tp) => {
+          if (tp.type === 'big') {
+            ctx.drawImage(bgImg, 206 * scaleX, 0, 50 * scaleX, 96 * scaleY, tp.x, tp.y, 76, 144);
+          } else if (tp.type === 'mid') {
+            ctx.drawImage(bgImg, 160 * scaleX, 12 * scaleY, 44 * scaleX, 82 * scaleY, tp.x, tp.y, 66, 122);
+          } else {
+            ctx.drawImage(bgImg, 128 * scaleX, 14 * scaleY, 32 * scaleX, 52 * scaleY, tp.x, tp.y, 48, 78);
+          }
+        });
+
+        const gateX = W / 2;
+        const gateY = campBounds.bottom;
+        ctx.fillStyle = '#b58d58';
+        ctx.fillRect(gateX - 36, gateY - 6, 72, 26);
+        ctx.drawImage(bgImg, 66 * scaleX, 98 * scaleY, 28 * scaleX, 26 * scaleY, gateX + 44, gateY - 12, 42, 39);
+        ctx.drawImage(bgImg, 32 * scaleX, 76 * scaleY, 30 * scaleX, 34 * scaleY, gateX - 78, gateY - 4, 42, 46);
+      }
+      ctx.restore();
+    }
+
+    function drawLogFenceBorder(ctx, x, y, w, h) {
+      ctx.save();
+      ctx.fillStyle = '#8c5319';
+      ctx.strokeStyle = '#2b180c';
+      ctx.lineWidth = 2;
+
+      const seg = 34;
+      for (let px = x + 10; px < x + w - 28; px += seg) {
+        ctx.fillRect(px, y, 28, 8);
+        ctx.strokeRect(px, y, 28, 8);
+        if (Math.abs(px + 14 - (x + w / 2)) > 38) {
+          ctx.fillRect(px, y + h - 8, 28, 8);
+          ctx.strokeRect(px, y + h - 8, 28, 8);
+        }
+      }
+
+      for (let py = y + 10; py < y + h - 28; py += seg) {
+        ctx.fillRect(x, py, 8, 28);
+        ctx.strokeRect(x, py, 8, 28);
+        ctx.fillRect(x + w - 8, py, 8, 28);
+        ctx.strokeRect(x + w - 8, py, 8, 28);
+      }
+      ctx.restore();
+    }
+
+    function drawCharacterFrame(ctx, charId, dir, isWalking, frameIdx, x, y, scale = 1.85) {
+      const sheet = sprites.chars[charId];
+      if (!sheet) return;
+
+      const fw = sheet.width / 6;
+      const fh = sheet.height / 6;
+
+      let row = 0;
+      let flipX = false;
+
+      if (dir === 'down') {
+        row = isWalking ? 1 : 0;
+      } else if (dir === 'right') {
+        row = isWalking ? 3 : 2;
+      } else if (dir === 'left') {
+        row = isWalking ? 3 : 2;
+        flipX = true;
+      } else if (dir === 'up') {
+        row = isWalking ? 5 : 4;
+      }
+
+      const maxCols = isWalking ? 6 : 2;
+      const col = frameIdx % maxCols;
+
+      ctx.save();
+      ctx.translate(x, y);
+      if (flipX) ctx.scale(-1, 1);
+      ctx.imageSmoothingEnabled = false;
+
+      const drawW = fw * scale;
+      const drawH = fh * scale;
+      ctx.drawImage(
+        sheet,
+        col * fw, row * fh, fw, fh,
+        -drawW / 2, -drawH + 8, drawW, drawH
+      );
+      ctx.restore();
+    }
+
+    function updateCamperAI(dt) {
+      camperAI.timer -= dt;
+      camperAI.frameTimer += dt;
+
+      const frameInterval = camperAI.state === 'walk' ? 0.13 : 0.42;
+      if (camperAI.frameTimer >= frameInterval) {
+        camperAI.frameTimer = 0;
+        camperAI.frameIndex = (camperAI.frameIndex + 1) % 6;
+      }
+
+      if (camperAI.timer <= 0) {
+        if (camperAI.state === 'walk') {
+          camperAI.state = 'idle';
+          camperAI.vx = 0;
+          camperAI.vy = 0;
+          camperAI.timer = 1.2 + Math.random() * 1.8;
+          camperAI.frameIndex = 0;
+        } else {
+          camperAI.state = 'walk';
+          camperAI.timer = 1.5 + Math.random() * 2.5;
+          const angle = Math.random() * Math.PI * 2;
+          camperAI.vx = Math.cos(angle) * camperAI.speed;
+          camperAI.vy = Math.sin(angle) * camperAI.speed;
+
+          if (Math.abs(camperAI.vx) > Math.abs(camperAI.vy)) {
+            camperAI.dir = camperAI.vx >= 0 ? 'right' : 'left';
+          } else {
+            camperAI.dir = camperAI.vy >= 0 ? 'down' : 'up';
+          }
+        }
+      }
+
+      if (camperAI.state === 'walk') {
+        let nextX = camperAI.x + camperAI.vx * dt;
+        let nextY = camperAI.y + camperAI.vy * dt;
+
+        const marginX = 28;
+        const marginTop = 34;
+        const marginBot = 18;
+
+        if (nextX < campBounds.left + marginX) {
+          nextX = campBounds.left + marginX;
+          camperAI.vx = Math.abs(camperAI.vx);
+          camperAI.dir = 'right';
+        } else if (nextX > campBounds.right - marginX) {
+          nextX = campBounds.right - marginX;
+          camperAI.vx = -Math.abs(camperAI.vx);
+          camperAI.dir = 'left';
+        }
+
+        if (nextY < campBounds.top + marginTop) {
+          nextY = campBounds.top + marginTop;
+          camperAI.vy = Math.abs(camperAI.vy);
+          camperAI.dir = 'down';
+        } else if (nextY > campBounds.bottom - marginBot) {
+          nextY = campBounds.bottom - marginBot;
+          camperAI.vy = -Math.abs(camperAI.vy);
+          camperAI.dir = 'up';
+        }
+
+        camperAI.x = nextX;
+        camperAI.y = nextY;
+      }
+    }
+
+    function drawCamperNameTag(ctx, x, y, name) {
+      ctx.save();
+      ctx.font = 'bold 13px "Jua", sans-serif';
+      const textW = ctx.measureText(name).width;
+      const boxW = textW + 18;
+      const boxH = 22;
+      const bx = x - boxW / 2;
+      const by = y - 68;
+
+      ctx.fillStyle = 'rgba(43, 24, 12, 0.82)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, boxW, boxH, 10);
+      ctx.fill();
+      ctx.strokeStyle = '#f6b93b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff8eb';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(name, x, by + boxH / 2 + 1);
+      ctx.restore();
+    }
+
+    let previewAnimTimer = 0;
+    let previewFrame = 0;
+
+    function renderEntryPreviews(dt) {
+      previewAnimTimer += dt;
+      if (previewAnimTimer >= 0.16) {
+        previewAnimTimer = 0;
+        previewFrame = (previewFrame + 1) % 6;
+      }
+
+      [1, 2, 3].forEach((cid) => {
+        const pCanvas = document.getElementById(`previewChar${cid}`);
+        if (!pCanvas) return;
+        const pCtx = pCanvas.getContext('2d');
+        pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+        const isSel = gameState.selectedChar === cid;
+        drawCharacterFrame(pCtx, cid, 'down', isSel, previewFrame, 32, 64, 1.8);
+      });
+    }
+
+    let lastTimestamp = 0;
+
+    function mainLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
+      lastTimestamp = timestamp;
+
+      renderCampsiteBackground(ctx);
+
+      if (!gameState.started) {
+        renderEntryPreviews(dt);
+      } else {
+        updateCamperAI(dt);
+
+        const renderables = [
+          { type: 'camper', y: camperAI.y, zOrder: 0 }
+        ];
+
+        gameState.placedItems.forEach((pItem) => {
+          renderables.push({ type: 'item', y: pItem.y, zOrder: pItem.zOrder || 0, data: pItem });
+        });
+
+        renderables.sort((a, b) => {
+          if (a.zOrder !== b.zOrder) return a.zOrder - b.zOrder;
+          return a.y - b.y;
+        });
+
+        renderables.forEach((obj) => {
+          if (obj.type === 'camper') {
+            drawCharacterFrame(
+              ctx,
+              gameState.selectedChar,
+              camperAI.dir,
+              camperAI.state === 'walk',
+              camperAI.frameIndex,
+              camperAI.x,
+              camperAI.y,
+              1.95
+            );
+            drawCamperNameTag(ctx, camperAI.x, camperAI.y, gameState.playerName);
+          } else if (obj.type === 'item') {
+            drawItemVisual(ctx, obj.data.itemId, obj.data.x, obj.data.y, obj.data.scale, 1);
+          }
+        });
+
+        if (gameState.placingItem && gameState.mousePos.active) {
+          const px = Math.max(campBounds.left + 24, Math.min(campBounds.right - 24, gameState.mousePos.x));
+          const py = Math.max(campBounds.top + 20, Math.min(campBounds.bottom - 16, gameState.mousePos.y));
+
+          ctx.save();
+          ctx.strokeStyle = '#fff200';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([6, 4]);
+          ctx.beginPath();
+          ctx.ellipse(px, py + 16, 36, 13, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          drawItemVisual(ctx, gameState.placingItem, px, py, 1.05, 0.72);
+        }
+      }
+
+      if (gameState.sparkles.length > 0) {
+        updateAndDrawSparkles(ctx, dt);
+      }
+
+      requestAnimationFrame(mainLoop);
+    }
+
+    window.onload = async function () {
+      await initDefaultAssetCatalog();
+      resizeCanvas();
+      initAllSprites(() => {
+        requestAnimationFrame(mainLoop);
+      });
+    };
+  </script>
+</body>
+</html>
