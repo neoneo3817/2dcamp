@@ -1786,17 +1786,92 @@
     }
 
     async function initDefaultAssetCatalog() {
-      const sourceObj = CAMPING_ASSET_MANIFEST;
+      let rawManifest = null;
+
+      // 1) camping_asset/manifest.json 파일이 있으면 우선 로드
+      try {
+        const res = await fetch('./camping_asset/manifest.json');
+        if (res.ok) {
+          rawManifest = await res.json();
+        }
+      } catch (e) {}
+
+      // 2) GitHub Pages 호스팅(*.github.io)일 경우 GitHub Contents API로 실제 camping_asset 하위 폴더/PNG 파일 자동 탐색
+      if (!rawManifest && window.location.hostname.endsWith('.github.io')) {
+        try {
+          const owner = window.location.hostname.split('.')[0];
+          const pathSegs = window.location.pathname.split('/').filter(Boolean);
+          const repo = pathSegs[0] || `${owner}.github.io`;
+          const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/camping_asset`;
+          const rootRes = await fetch(apiBase);
+          if (rootRes.ok) {
+            const entries = await rootRes.json();
+            if (Array.isArray(entries)) {
+              const autoMap = {};
+              for (const entry of entries) {
+                if (entry.type === 'dir') {
+                  const subRes = await fetch(entry.url);
+                  if (subRes.ok) {
+                    const files = await subRes.json();
+                    const pngs = files
+                      .filter((f) => f.type === 'file' && /\.png$/i.test(f.name) && !f.name.startsWith('._'))
+                      .map((f) => f.name);
+                    if (pngs.length > 0) autoMap[entry.name] = pngs;
+                  }
+                }
+              }
+              if (Object.keys(autoMap).length > 0) {
+                rawManifest = autoMap;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3) 로컬 개발 서버(VSCode Live Server / Python http.server 등) 디렉터리 리스팅 HTML 자동 탐색
+      if (!rawManifest && window.location.protocol.startsWith('http') && !window.location.hostname.endsWith('.github.io')) {
+        try {
+          const dirRes = await fetch('./camping_asset/');
+          if (dirRes.ok) {
+            const html = await dirRes.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const links = Array.from(doc.querySelectorAll('a'))
+              .map((a) => decodeURIComponent(a.getAttribute('href') || ''))
+              .filter((href) => href.endsWith('/') && !href.startsWith('?') && !href.startsWith('/') && href !== '../' && href !== './');
+
+            const autoMap = {};
+            for (const dirHref of links) {
+              const folderName = dirHref.replace(/\/$/, '');
+              const subRes = await fetch(`./camping_asset/${encodeURIComponent(folderName)}/`);
+              if (subRes.ok) {
+                const subHtml = await subRes.text();
+                const subDoc = new DOMParser().parseFromString(subHtml, 'text/html');
+                const pngs = Array.from(subDoc.querySelectorAll('a'))
+                  .map((a) => decodeURIComponent(a.getAttribute('href') || '').split('/').pop())
+                  .filter((name) => name && /\.png$/i.test(name) && !name.startsWith('._'));
+                if (pngs.length > 0) autoMap[folderName] = pngs;
+              }
+            }
+            if (Object.keys(autoMap).length > 0) {
+              rawManifest = autoMap;
+            }
+          }
+        } catch (e) {}
+      }
+
+      const sourceObj = rawManifest || CAMPING_ASSET_MANIFEST;
       const catalog = {};
       let starterAssigned = false;
 
       Object.keys(sourceObj).forEach((folderName) => {
         const list = sourceObj[folderName] || [];
         catalog[folderName] = list.map((entry) => {
-          const fileName = entry.file;
-          const displayName = entry.name;
+          const fileName = typeof entry === 'string' ? entry : entry.file;
+          const displayName = typeof entry === 'string' ? stripPngExt(entry) : (entry.name || stripPngExt(fileName));
           const itemId = `${folderName}__${fileName}`;
-          const isOldTent = entry.unlocked !== undefined ? entry.unlocked : (/낡은|old/i.test(displayName) && !starterAssigned);
+          const isOldTent = (typeof entry === 'object' && entry.unlocked !== undefined)
+            ? entry.unlocked
+            : (/낡은|old/i.test(displayName) && !starterAssigned);
 
           if (isOldTent) starterAssigned = true;
 
@@ -1805,16 +1880,21 @@
             name: displayName,
             fileName: fileName,
             folder: folderName,
-            fallbackType: entry.fallbackType || 'tent_old',
+            fallbackType: (typeof entry === 'object' && entry.fallbackType) ? entry.fallbackType : 'tent_old',
             unlocked: Boolean(isOldTent)
           };
         });
       });
 
-      ASSET_CATALOG = catalog;
-      gameState.activeTab = Object.keys(catalog)[0] || '텐트';
+      const folderKeys = Object.keys(catalog);
+      if (!starterAssigned && folderKeys.length > 0 && catalog[folderKeys[0]].length > 0) {
+        catalog[folderKeys[0]][0].unlocked = true;
+      }
 
-      Object.keys(ASSET_CATALOG).forEach((folder) => {
+      ASSET_CATALOG = catalog;
+      gameState.activeTab = folderKeys[0] || '텐트';
+
+      folderKeys.forEach((folder) => {
         ASSET_CATALOG[folder].forEach((item) => {
           const img = new Image();
           img.onload = () => { loadedItemImages[item.id] = img; };
